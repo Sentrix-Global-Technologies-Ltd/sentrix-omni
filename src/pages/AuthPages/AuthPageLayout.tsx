@@ -1,6 +1,7 @@
 import React from "react";
 import GridShape from "../../components/common/GridShape";
 import { Link } from "react-router";
+import Logo from "../../components/common/Logo";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 export default function AuthLayout({
@@ -17,16 +18,13 @@ export default function AuthLayout({
             {/* <!-- ===== Common Grid Shape Start ===== --> */}
             <GridShape />
             <div className="flex flex-col items-center max-w-xs">
-              <Link to="/" className="block mb-4">
-                <img
-                  width={231}
-                  height={48}
-                  src="/images/logo/auth-logo.svg"
-                  alt="Logo"
-                />
+              <Link to="/" className="mb-5 block rounded-2xl bg-white/10 p-4 backdrop-blur" aria-label="Sentrix home">
+                <Logo iconOnly className="[&_span:last-child]:text-white" />
               </Link>
-              <p className="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
+              <h2 className="mb-2 text-center text-2xl font-bold text-white">Sentrix</h2>
+              <p className="text-center text-gray-300 dark:text-white/60">
+                Safety &amp; security operations — incidents, emergencies, dispatch, and
+                evidence, in one command console.
               </p>
             </div>
           </div>

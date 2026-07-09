@@ -1,9 +1,22 @@
+import { initials } from "../../../lib/principal";
+
 interface AvatarProps {
-  src: string; // URL of the avatar image
+  src?: string; // URL of the avatar image; omit to show the initials fallback
   alt?: string; // Alt text for the avatar
+  /** Shown as a colored initials circle when `src` is not set. */
+  name?: string;
   size?: "xsmall" | "small" | "medium" | "large" | "xlarge" | "xxlarge"; // Avatar size
   status?: "online" | "offline" | "busy" | "none"; // Status indicator
 }
+
+const initialsTextClasses = {
+  xsmall: "text-[10px]",
+  small: "text-xs",
+  medium: "text-sm",
+  large: "text-base",
+  xlarge: "text-lg",
+  xxlarge: "text-xl",
+};
 
 const sizeClasses = {
   xsmall: "h-6 w-6 max-w-6",
@@ -31,14 +44,22 @@ const statusColorClasses = {
 
 const Avatar: React.FC<AvatarProps> = ({
   src,
-  alt = "User Avatar",
+  alt,
+  name,
   size = "medium",
   status = "none",
 }) => {
   return (
-    <div className={`relative  rounded-full ${sizeClasses[size]}`}>
-      {/* Avatar Image */}
-      <img src={src} alt={alt} className="object-cover rounded-full" />
+    <div className={`relative rounded-full ${sizeClasses[size]}`}>
+      {src ? (
+        <img src={src} alt={alt ?? name ?? "User Avatar"} className="h-full w-full object-cover rounded-full" />
+      ) : (
+        <div
+          className={`flex h-full w-full items-center justify-center rounded-full bg-brand-50 font-semibold text-brand-600 dark:bg-white/10 dark:text-white/90 ${initialsTextClasses[size]}`}
+        >
+          {initials(name ?? "?")}
+        </div>
+      )}
 
       {/* Status Indicator */}
       {status !== "none" && (

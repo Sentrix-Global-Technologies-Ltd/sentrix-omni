@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Secrets — never commit (VITE_* here are build-time only, no runtime
+# secrets, but the file may still carry environment-specific values you
+# don't want in git history).
+.env
+.env.*
+!.env.example
+!.env.production.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
