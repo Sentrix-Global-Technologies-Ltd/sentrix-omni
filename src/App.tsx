@@ -11,6 +11,8 @@ import { accessByPath } from "./config/navigation";
 // Route-level code splitting: every page is lazy-loaded so heavy libs
 // (apexcharts, fullcalendar, …) land in per-route chunks, not the initial bundle.
 const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
+const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 const Home = lazy(() => import("./features/dashboard/pages/DashboardHomePage"));
 const UserProfiles = lazy(() => import("./pages/UserProfiles"));
@@ -71,6 +73,15 @@ export default function App() {
             <Route element={<GuestRoute />}>
               <Route path="/signin" element={<SignIn />} />
             </Route>
+
+            {/*
+              Password reset: reachable regardless of auth state (the emailed
+              reset link — see IdentityServiceProvider — should always work,
+              even for someone currently signed in as a different account), so
+              these sit outside both GuestRoute and ProtectedRoute.
+            */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/password/reset/:token" element={<ResetPassword />} />
 
             {/* Authenticated console */}
             <Route element={<ProtectedRoute />}>
