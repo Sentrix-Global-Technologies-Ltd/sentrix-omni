@@ -32,13 +32,13 @@ export default function SettingsPage() {
     <>
       <PageMeta title="Settings | Sentrix Console" description="Profile & organization settings" />
       {/*
-        No "New organization" action here anymore: tenant provisioning is now
-        a platform-staff action (organizations.provision — OnboardingManager
-        or SuperAdmin), not something any org member can self-serve. See
+        No "New organization" action here: tenant provisioning is a
+        platform-staff action (organizations.provision — OnboardingManager or
+        SuperAdmin), not something any org member can self-serve. See
         StoreOrganizationRequest for the backend gate. Platform staff create
-        tenants via the CRM lead-conversion flow, or organizations.store
-        directly as an API/admin-tool action — neither belongs on this
-        org-scoped Settings page.
+        tenants either via the CRM lead-conversion flow (/superadmin/leads) or
+        directly via CreateOrganizationButton on SuperAdminOverviewPage —
+        neither belongs on this org-scoped Settings page.
       */}
       <PageHeader title="Settings" breadcrumbs={[{ label: "Settings" }]} />
 

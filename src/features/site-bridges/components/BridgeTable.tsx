@@ -11,7 +11,7 @@ interface Props {
   onRetry?: () => void;
 }
 
-/** Site Bridge fleet — desktop agents registering this org's own CCTV/NVR feeds. */
+/** Site Bridge fleet — machine credentials that authenticate this org's own CCTV/NVR feed ingest. */
 export default function BridgeTable({ bridges, isLoading, error, onRetry }: Props) {
   const columns: Column<CameraBridge>[] = [
     {

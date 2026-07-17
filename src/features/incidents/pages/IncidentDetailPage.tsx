@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
@@ -19,6 +20,7 @@ import {
   formatDateTime,
   incidentSeverityTone,
   incidentStatusTone,
+  riskTone,
   titleCase,
 } from "../components/incidentTone";
 
@@ -32,6 +34,7 @@ export default function IncidentDetailPage() {
   const query = useIncident(id);
   const actions = useIncidentActions(id);
   const detail = query.data?.data;
+  const [authoritiesNotes, setAuthoritiesNotes] = useState("");
 
   const breadcrumbs = [
     { label: "Incidents", to: "/incidents" },
@@ -82,6 +85,9 @@ export default function IncidentDetailPage() {
             <StatusBadge tone={incidentSeverityTone[incident.severity]}>
               {titleCase(incident.severity)}
             </StatusBadge>
+            {incident.risk_score != null && (
+              <StatusBadge tone={riskTone(incident.risk_score)}>Risk {incident.risk_score}</StatusBadge>
+            )}
             <RealtimeIndicator connected={connected} />
           </div>
         }
@@ -115,6 +121,28 @@ export default function IncidentDetailPage() {
               successMessage="Incident escalated"
               onConfirm={() => actions.escalate.mutateAsync()}
             />
+          </Can>
+        )}
+        {incident.status !== "closed" && (
+          <Can permission="incidents.notify_authorities">
+            <ConfirmActionButton
+              label="Notify authorities"
+              tone="danger"
+              title="Record that authorities were notified?"
+              description="This records that you personally contacted external authorities (e.g. police, fire, or a private response provider). It does not place any call or dispatch on your behalf — no such automated integration exists."
+              confirmLabel="Record"
+              successMessage="Recorded"
+              onOpen={() => setAuthoritiesNotes("")}
+              onConfirm={() => actions.notifyAuthorities.mutateAsync(authoritiesNotes || undefined)}
+            >
+              <textarea
+                value={authoritiesNotes}
+                onChange={(e) => setAuthoritiesNotes(e.target.value)}
+                placeholder="Notes — who you contacted, reference number, etc. (optional)"
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90"
+              />
+            </ConfirmActionButton>
           </Can>
         )}
         {["open", "investigating", "escalated"].includes(incident.status) && (
@@ -178,6 +206,15 @@ export default function IncidentDetailPage() {
                     >
                       {incident.emergency_id.slice(0, 8)}
                     </Link>
+                  </dd>
+                </div>
+              )}
+              {incident.authorities_notified_at && (
+                <div className="col-span-2 sm:col-span-4">
+                  <dt className="text-theme-xs uppercase text-gray-400">Authorities notified</dt>
+                  <dd className="text-gray-700 dark:text-gray-300">
+                    {formatDateTime(incident.authorities_notified_at)}
+                    {incident.authorities_notes && ` — ${incident.authorities_notes}`}
                   </dd>
                 </div>
               )}

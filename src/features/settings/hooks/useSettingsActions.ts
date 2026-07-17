@@ -13,10 +13,10 @@ function useOrgInvalidate() {
 }
 
 /**
- * Create a brand-new organization. Not currently wired to any button in this
- * app — tenant provisioning is a platform-staff action (organizations.provision:
+ * Create a brand-new organization directly (bypassing the CRM lead pipeline).
+ * Tenant provisioning is a platform-staff action (organizations.provision:
  * OnboardingManager/SuperAdmin), not something an ordinary org member can
- * self-serve. Kept for a future platform-staff admin tool.
+ * self-serve — used by CreateOrganizationButton on SuperAdminOverviewPage.
  */
 export function useCreateOrganization() {
   return useMutation({

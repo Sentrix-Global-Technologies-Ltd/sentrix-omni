@@ -3,10 +3,11 @@ import { ridesOpsApi } from "../api/ridesops.api";
 import { ridesOpsKeys } from "../api/ridesops.keys";
 import type { DriverFilters, RideFilters } from "../api/ridesops.types";
 
-export function useRidesOverview() {
+export function useRidesOverview(enabled = true) {
   return useQuery({
     queryKey: ridesOpsKeys.overview(),
     queryFn: () => ridesOpsApi.overview(),
+    enabled,
   });
 }
 

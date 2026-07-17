@@ -6,4 +6,5 @@ export const intelKeys = {
   report: (orgId: string, range: IntelRange) => ["intel", orgId, "report", range] as const,
   analytics: (orgId: string, range: IntelRange, bucket: string) =>
     ["intel", orgId, "analytics", range, bucket] as const,
+  dispatchTrend: (orgId: string) => ["intel", orgId, "dispatch-trend"] as const,
 };

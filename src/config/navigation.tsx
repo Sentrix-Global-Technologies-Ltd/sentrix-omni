@@ -38,6 +38,15 @@ export interface NavItem {
   path: string;
   icon: ReactNode;
   access?: AccessRule;
+  /**
+   * Requires genuine organization membership, checked independently of
+   * `access`/SuperAdmin-allow-all — this is for personal/consumer-facing
+   * items (e.g. Billing's individual subscription self-service) that a
+   * platform-staff-only identity (SuperAdmin/CustomerSupport/SentrixEngineer
+   * etc. with no organization membership) has no reason to see, even though
+   * a normal `access` rule can never hide anything from SuperAdmin.
+   */
+  requireOrgMembership?: boolean;
 }
 
 export interface NavGroup {
@@ -204,11 +213,28 @@ export const navigation: NavGroup[] = [
         // Every user can manage their own profile/settings.
       },
       {
+        key: "support",
+        label: "Support",
+        path: "/support",
+        icon: <ChatIcon />,
+        // Supervisor-tier only (Supervisor + OrganizationAdmin) — see
+        // OrganizationRole.php. Dispatcher/Responder/User escalate to their
+        // own Supervisor instead of raising a ticket directly.
+        access: { anyPermission: ["support.view"] },
+      },
+      {
         key: "billing",
         label: "Billing",
         path: "/billing",
         icon: <DollarLineIcon />,
-        // Account-level self-service; available to any authenticated user.
+        // The organization's own Sentrix subscription (billing.view/manage —
+        // OrganizationAdmin only, see OrganizationRole.php). NOT a personal
+        // per-user plan — there is no such concept in this system. Also not
+        // shown to Sentrix's own platform staff (SuperAdmin/CustomerSupport/
+        // SentrixEngineer/etc. with no org membership) — see
+        // requireOrgMembership below.
+        access: { anyPermission: ["billing.view"] },
+        requireOrgMembership: true,
       },
       {
         key: "roles",
@@ -229,7 +255,34 @@ export const navigation: NavGroup[] = [
         label: "SuperAdmin",
         path: "/superadmin",
         icon: <LockIcon />,
-        access: { superAdminOnly: true },
+        // Visible to any platform-staff role, not just true SuperAdmin — each
+        // PlatformRole (OnboardingManager, SentrixEngineer, CustomerSupport,
+        // Sales, LedgerViewer/Admin, RidesOps/Dispatch, DispatchCoordinator/
+        // Monitor/Auditor) only ever holds a subset of these, and the overview
+        // page itself only renders the tiles/actions the viewer actually has
+        // permission for (see SuperAdminOverviewPage + superAdminSubPathAccess
+        // below for the per-section route guards).
+        access: {
+          anyPermission: [
+            "crm.leads.manage",
+            "crm.leads.convert",
+            "organizations.provision",
+            "ledger.view",
+            "ledger.manage",
+            "ridesops.view",
+            "ridesops.dispatch",
+            "cad.view",
+            "cad.act",
+            "command.view",
+            "command.act",
+            "coordination.view",
+            "coordination.act",
+            "security.posture.view",
+            "hardware.provision",
+            "support.tickets.view",
+            "support.tickets.manage",
+          ],
+        },
       },
     ],
   },
@@ -244,4 +297,34 @@ export const accessByPath: Record<string, AccessRule | undefined> =
   Object.fromEntries(
     navigation.flatMap((group) => group.items.map((i) => [i.path, i.access])),
   );
+
+/**
+ * Per-section access for the `/superadmin/*` sub-pages. These aren't their own
+ * sidebar items (they're reached via the tiles on SuperAdminOverviewPage), so
+ * they don't go through `navigation`/`accessByPath` above — but each still
+ * needs its own route guard, exactly like every other console section, rather
+ * than sharing one blanket `superAdminOnly` gate that only a true SuperAdmin
+ * could ever pass. Keys match PlatformRole.permissions() (PlatformPermission.php).
+ */
+export const superAdminSubPathAccess: Record<string, AccessRule> = {
+  "/superadmin/leads": { anyPermission: ["crm.leads.manage", "crm.leads.convert"] },
+  "/superadmin/ledger": { anyPermission: ["ledger.view", "ledger.manage"] },
+  "/superadmin/rides-ops": { anyPermission: ["ridesops.view", "ridesops.dispatch"] },
+  "/superadmin/command": {
+    anyPermission: [
+      "cad.view",
+      "cad.act",
+      "command.view",
+      "command.act",
+      "coordination.view",
+      "coordination.act",
+    ],
+  },
+  "/superadmin/security": { anyPermission: ["security.posture.view"] },
+  "/superadmin/support": { anyPermission: ["support.tickets.view", "support.tickets.manage"] },
+  // Cross-tenant subscription oversight is SuperAdmin-only by explicit
+  // product decision — unlike the sections above, it is NOT delegable to any
+  // PlatformRole (mirrors PlatformSubscriptionController's isSuperAdmin() gate).
+  "/superadmin/subscriptions": { superAdminOnly: true },
+};
 

@@ -4,4 +4,5 @@ import type { CameraFeedFilters } from "./camera-feeds.types";
 export const cameraFeedKeys = {
   all: (orgId: string) => ["camera-feeds", orgId] as const,
   list: (orgId: string, filters: CameraFeedFilters) => ["camera-feeds", orgId, "list", filters] as const,
+  summary: (orgId: string) => ["camera-feeds", orgId, "summary"] as const,
 };

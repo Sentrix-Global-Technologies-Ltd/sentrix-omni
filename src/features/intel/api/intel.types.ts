@@ -42,3 +42,11 @@ export interface IntelAnalytics {
   };
   heatmap: Array<{ cell: string; lat: number; lng: number; count: number }>;
 }
+
+/** `GET intel/dispatch-trend` — Command Center avg time-to-dispatch KPI:
+ * rolling 24h window vs. the prior 24h window. */
+export interface IntelDispatchTrend {
+  methodology: string;
+  current: DurationSummary & { since: string; until: string };
+  previous: DurationSummary & { since: string; until: string };
+}

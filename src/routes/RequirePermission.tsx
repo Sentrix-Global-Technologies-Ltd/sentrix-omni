@@ -8,8 +8,21 @@ import Forbidden from "../pages/OtherPage/Forbidden";
  * Renders the matched route only when the API identity satisfies `rule`,
  * otherwise shows the in-shell Forbidden page. Sits inside ProtectedRoute, so
  * authentication is already guaranteed.
+ *
+ * `requireOrgMembership` is checked independently of `rule`/SuperAdmin-allow-all
+ * — mirrors the same flag on NavItem (see config/navigation.tsx): a couple of
+ * routes (Billing's personal subscription self-service) have nothing to do
+ * with admin authority and must stay hidden from organization-less platform
+ * staff, SuperAdmin included.
  */
-export default function RequirePermission({ rule }: { rule?: AccessRule }) {
-  const { isAllowed } = useAuthz();
-  return isAllowed(rule) ? <Outlet /> : <Forbidden />;
+export default function RequirePermission({
+  rule,
+  requireOrgMembership,
+}: {
+  rule?: AccessRule;
+  requireOrgMembership?: boolean;
+}) {
+  const { isAllowed, isOrgMember } = useAuthz();
+  const allowed = isAllowed(rule) && (!requireOrgMembership || isOrgMember);
+  return allowed ? <Outlet /> : <Forbidden />;
 }

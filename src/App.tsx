@@ -6,13 +6,14 @@ import FullScreenLoader from "./components/common/FullScreenLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import GuestRoute from "./routes/GuestRoute";
 import RequirePermission from "./routes/RequirePermission";
-import { accessByPath } from "./config/navigation";
+import { accessByPath, superAdminSubPathAccess } from "./config/navigation";
 
 // Route-level code splitting: every page is lazy-loaded so heavy libs
 // (apexcharts, fullcalendar, …) land in per-route chunks, not the initial bundle.
 const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
 const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
+const AcceptInvitation = lazy(() => import("./pages/AuthPages/AcceptInvitation"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 const Home = lazy(() => import("./features/dashboard/pages/DashboardHomePage"));
 const UserProfiles = lazy(() => import("./pages/UserProfiles"));
@@ -54,6 +55,7 @@ const RolesPage = lazy(() => import("./features/authorization/pages/RolesPage"))
 const NotificationsPage = lazy(() => import("./features/notifications/pages/NotificationsPage"));
 const AuditLogPage = lazy(() => import("./features/audit/pages/AuditLogPage"));
 const SettingsPage = lazy(() => import("./features/settings/pages/SettingsPage"));
+const ContactSupportPage = lazy(() => import("./features/support/pages/ContactSupportPage"));
 const AdminOverviewPage = lazy(() => import("./features/admin/pages/AdminOverviewPage"));
 const SuperAdminOverviewPage = lazy(() => import("./features/superadmin/pages/SuperAdminOverviewPage"));
 const LeadListPage = lazy(() => import("./features/crm/pages/LeadListPage"));
@@ -61,6 +63,9 @@ const LeadDetailPage = lazy(() => import("./features/crm/pages/LeadDetailPage"))
 const LedgerConsolePage = lazy(() => import("./features/ledger/pages/LedgerConsolePage"));
 const RidesOpsConsolePage = lazy(() => import("./features/ridesops/pages/RidesOpsConsolePage"));
 const CommandConsolePage = lazy(() => import("./features/command/pages/CommandConsolePage"));
+const SecurityPosturePage = lazy(() => import("./features/superadmin/pages/SecurityPosturePage"));
+const SupportQueuePage = lazy(() => import("./features/superadmin/pages/SupportQueuePage"));
+const SubscriptionsOverviewPage = lazy(() => import("./features/superadmin/pages/SubscriptionsOverviewPage"));
 
 export default function App() {
   return (
@@ -82,6 +87,15 @@ export default function App() {
             */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/password/reset/:token" element={<ResetPassword />} />
+
+            {/*
+              Accept invitation: the emailed "Accept invitation" link
+              (OrganizationInvitationNotification::toMail()) opens directly
+              here. Same reasoning as password reset above — must work
+              regardless of auth state, since the visitor may have no
+              session yet at all, or may be signed in as a different account.
+            */}
+            <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
 
             {/* Authenticated console */}
             <Route element={<ProtectedRoute />}>
@@ -133,7 +147,9 @@ export default function App() {
                 <Route element={<RequirePermission rule={accessByPath["/retention"]} />}>
                   <Route path="/retention" element={<RetentionConsolePage />} />
                 </Route>
-                <Route path="/billing" element={<BillingConsolePage />} />
+                <Route element={<RequirePermission rule={accessByPath["/billing"]} requireOrgMembership />}>
+                  <Route path="/billing" element={<BillingConsolePage />} />
+                </Route>
                 <Route path="/assistant" element={<AssistantPage />} />
                 <Route element={<RequirePermission rule={accessByPath["/trips"]} />}>
                   <Route path="/trips" element={<TripListPage />} />
@@ -150,16 +166,46 @@ export default function App() {
                   <Route path="/audit" element={<AuditLogPage />} />
                 </Route>
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route element={<RequirePermission rule={accessByPath["/support"]} />}>
+                  <Route path="/support" element={<ContactSupportPage />} />
+                </Route>
                 <Route element={<RequirePermission rule={accessByPath["/admin"]} />}>
                   <Route path="/admin" element={<AdminOverviewPage />} />
                 </Route>
+                {/*
+                  The overview page itself just needs ANY platform-staff
+                  permission (it only renders the tiles/actions the viewer
+                  actually holds — see SuperAdminOverviewPage). Each sub-page
+                  below gets its OWN specific guard instead of sharing one
+                  blanket gate, same as every other console section above —
+                  a SentrixEngineer or OnboardingManager is real platform
+                  staff, not a SuperAdmin, and must not be blocked from the
+                  one section they actually hold permission for.
+                */}
                 <Route element={<RequirePermission rule={accessByPath["/superadmin"]} />}>
                   <Route path="/superadmin" element={<SuperAdminOverviewPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/leads"]} />}>
                   <Route path="/superadmin/leads" element={<LeadListPage />} />
                   <Route path="/superadmin/leads/:id" element={<LeadDetailPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/ledger"]} />}>
                   <Route path="/superadmin/ledger" element={<LedgerConsolePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/rides-ops"]} />}>
                   <Route path="/superadmin/rides-ops" element={<RidesOpsConsolePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/command"]} />}>
                   <Route path="/superadmin/command" element={<CommandConsolePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/security"]} />}>
+                  <Route path="/superadmin/security" element={<SecurityPosturePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/support"]} />}>
+                  <Route path="/superadmin/support" element={<SupportQueuePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/subscriptions"]} />}>
+                  <Route path="/superadmin/subscriptions" element={<SubscriptionsOverviewPage />} />
                 </Route>
 
                 {/* Template component reference pages (kept; not in production nav) */}

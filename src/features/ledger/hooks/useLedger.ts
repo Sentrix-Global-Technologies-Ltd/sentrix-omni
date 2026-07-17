@@ -3,10 +3,11 @@ import { ledgerApi } from "../api/ledger.api";
 import { ledgerKeys } from "../api/ledger.keys";
 import type { SourceFilters, WriteFilters } from "../api/ledger.types";
 
-export function useLedgerStats() {
+export function useLedgerStats(enabled = true) {
   return useQuery({
     queryKey: ledgerKeys.stats(),
     queryFn: () => ledgerApi.stats(),
+    enabled,
   });
 }
 

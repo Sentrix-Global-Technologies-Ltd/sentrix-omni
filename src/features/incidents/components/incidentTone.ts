@@ -18,6 +18,14 @@ export const incidentSeverityTone: Record<IncidentSeverity, Tone> = {
   critical: "error",
 };
 
+/** Risk-score → tone, mirroring the Ingest DecisionEngine's own bands
+ * (TRIGGER_THRESHOLD=40; weapon/gunshot/fire land 85-90; intrusion 75). */
+export function riskTone(score: number): Tone {
+  if (score >= 75) return "error";
+  if (score >= 40) return "warning";
+  return "light";
+}
+
 export const STATUS_OPTIONS: FilterOption[] = [
   { value: "open", label: "Open" },
   { value: "investigating", label: "Investigating" },

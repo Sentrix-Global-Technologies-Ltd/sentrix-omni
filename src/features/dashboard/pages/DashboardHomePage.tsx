@@ -2,8 +2,9 @@ import { useNavigate } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
 import StatCard from "../../../components/shared/StatCard";
+import Can from "../../../components/shared/Can";
 import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator";
-import { AlertHexaIcon, BoltIcon, GroupIcon, TaskIcon } from "../../../icons";
+import { AlertHexaIcon, BoltIcon, GroupIcon, TaskIcon, TimeIcon, VideoIcon } from "../../../icons";
 import { useAuth } from "../../../context/AuthContext";
 import { useOrganization } from "../../../context/OrganizationContext";
 
@@ -18,6 +19,8 @@ import { useRespondersRealtime } from "../../responders/hooks/useRespondersRealt
 import { useAssignments } from "../../assignments/hooks/useAssignments";
 import { useAssignmentsRealtime } from "../../assignments/hooks/useAssignmentsRealtime";
 import { useNotificationsRealtime } from "../../notifications/hooks/useNotificationsRealtime";
+import { useCameraSourcesSummary } from "../../camera-feeds/hooks/useCameraFeeds";
+import { useIntelDispatchTrend } from "../../intel/hooks/useIntel";
 
 import EmergencySummaryPanel from "../components/EmergencySummaryPanel";
 import DispatchQueuePanel from "../components/DispatchQueuePanel";
@@ -26,6 +29,9 @@ import ActivityTimelinePanel from "../components/ActivityTimelinePanel";
 import EscalationPanel from "../components/EscalationPanel";
 // import NotificationSummaryPanel from "../components/NotificationSummaryPanel";
 import AIInsightsPlaceholder from "../components/AIInsightsPlaceholder";
+import CameraWallPanel from "../components/CameraWallPanel";
+import CommunityHotspotPanel from "../../community/components/CommunityHotspotPanel";
+import { formatDuration } from "../../intel/components/intelFormat";
 
 interface PaginatorMeta {
   total?: number;
@@ -54,6 +60,8 @@ export default function DashboardHomePage() {
   const activeEmergencies = useEmergencies({ status: "triggered" });
   const availableResponders = useResponders({ status: "available" });
   const activeAssignments = useAssignments({ status: "active" });
+  const cameraSummary = useCameraSourcesSummary();
+  const dispatchTrend = useIntelDispatchTrend();
 
   // Unfiltered recent lists feed the live activity timeline only.
   const recentIncidents = useIncidents({});
@@ -120,6 +128,33 @@ export default function DashboardHomePage() {
             to="/assignments?status=active"
           />
         </div>
+        <Can permission="bridges.view">
+          <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+            <StatCard
+              label="Cameras online"
+              tone="success"
+              icon={<VideoIcon className="size-6" />}
+              loading={cameraSummary.isLoading}
+              value={
+                cameraSummary.data
+                  ? `${cameraSummary.data.data.online} / ${cameraSummary.data.data.total}`
+                  : "0 / 0"
+              }
+              to="/hardware"
+            />
+          </div>
+        </Can>
+        <Can permission="intel.view">
+          <div className="col-span-12 sm:col-span-6 xl:col-span-3">
+            <StatCard
+              label="Avg time-to-dispatch (24h)"
+              tone="light"
+              icon={<TimeIcon className="size-6" />}
+              loading={dispatchTrend.isLoading}
+              value={formatDuration(dispatchTrend.data?.data.current.average ?? null)}
+            />
+          </div>
+        </Can>
       </div>
 
       {/* 2-9: operational sections. Left = primary lists, right = situational awareness. */}
@@ -158,6 +193,14 @@ export default function DashboardHomePage() {
         <div className="col-span-12 space-y-6 lg:col-span-4">
           {/* 5. Responder availability */}
           <ResponderAvailabilityPanel />
+
+          {/* Camera wall: health tiles + recent detections */}
+          <Can permission="bridges.view">
+            <CameraWallPanel />
+          </Can>
+
+          {/* Community hotspots: crowdsourced report density */}
+          <CommunityHotspotPanel />
 
           {/* 6. Live activity timeline */}
           <ActivityTimelinePanel

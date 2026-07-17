@@ -18,3 +18,15 @@ export function useCameraFeeds(filters: CameraFeedFilters) {
     refetchInterval: POLL_MS,
   });
 }
+
+/** Total vs. online camera count — the Command Center KPI tile. */
+export function useCameraSourcesSummary() {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: cameraFeedKeys.summary(activeId ?? "none"),
+    queryFn: () => cameraFeedsApi.summary(activeId as string),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
+    refetchInterval: POLL_MS,
+  });
+}

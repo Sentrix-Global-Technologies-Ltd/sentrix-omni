@@ -15,7 +15,7 @@ import { navigation, type NavGroup } from "../config/navigation";
  */
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const { isAllowed } = useAuthz();
+  const { isAllowed, isOrgMember } = useAuthz();
   const location = useLocation();
 
   const expanded = isExpanded || isHovered || isMobileOpen;
@@ -25,11 +25,18 @@ const AppSidebar: React.FC = () => {
       ? location.pathname === "/"
       : location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-  // Filter items + groups by the current identity's access.
+  // Filter items + groups by the current identity's access. requireOrgMembership
+  // is checked separately from isAllowed(): isAllowed() always says yes for a
+  // SuperAdmin (allow-all, mirroring the backend's Gate::before), but a couple
+  // of items (Billing's personal subscription self-service) genuinely have
+  // nothing to do with admin authority and shouldn't appear for platform staff
+  // who aren't members of any organization, SuperAdmin included.
   const visibleGroups: NavGroup[] = navigation
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => isAllowed(item.access)),
+      items: group.items.filter(
+        (item) => isAllowed(item.access) && (!item.requireOrgMembership || isOrgMember),
+      ),
     }))
     .filter((group) => group.items.length > 0);
 

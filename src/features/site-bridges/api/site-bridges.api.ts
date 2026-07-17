@@ -4,8 +4,10 @@ import type { BridgeFilters, CameraBridge } from "./site-bridges.types";
 
 const base = (orgId: string) => `organizations/${orgId}/vision-guard/bridges`;
 
-/** Site Bridge admin endpoints (org-scoped) — the desktop agents that register
- * an organization's already-installed CCTV/NVR feeds. */
+/** Site Bridge admin endpoints (org-scoped) — machine credentials that
+ * authenticate ingest for an organization's already-installed CCTV/NVR feeds.
+ * No separate desktop agent application exists; whatever is on-site (a
+ * Sentrix relay process, or the org's own NVR) authenticates with the key. */
 export const siteBridgesApi = {
   list(orgId: string, filters: BridgeFilters): Promise<ApiResult<CameraBridge[]>> {
     return apiClient.get<CameraBridge[]>(base(orgId), {

@@ -9,6 +9,7 @@ import { ApiError } from "../../../services/api/errors";
 import { AlertHexaIcon, BoltIcon, FileIcon, TaskIcon } from "../../../icons";
 import Breakdown from "../components/Breakdown";
 import TrendBars from "../components/TrendBars";
+import OutcomeTrackingPanel from "../components/OutcomeTrackingPanel";
 import { formatDuration } from "../components/intelFormat";
 import { useIntelAnalytics, useIntelExport, useIntelReport } from "../hooks/useIntel";
 import type { IntelRange } from "../api/intel.types";
@@ -161,6 +162,13 @@ export default function IntelConsolePage() {
         </div>
         <div className="col-span-12 md:col-span-6 xl:col-span-4">
           <Breakdown title="Observations by kind" data={a?.breakdowns.observations_by_kind ?? {}} />
+        </div>
+      </div>
+
+      {/* Operator outcome tracking (item 20) */}
+      <div className="mt-6 grid grid-cols-12 gap-4 md:gap-6">
+        <div className="col-span-12 xl:col-span-6">
+          <OutcomeTrackingPanel />
         </div>
       </div>
     </>

@@ -5,6 +5,7 @@ import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import { formatDateTime } from "../../../lib/format";
+import { useOrganization } from "../../../context/OrganizationContext";
 import { useBillingActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
 import CheckoutPanel from "./CheckoutPanel";
 import type { Invoice } from "../api/billing.types";
@@ -14,12 +15,13 @@ const card =
 
 function statusTone(s: string): "success" | "warning" | "error" | "light" {
   if (s === "active") return "success";
-  if (s === "past_due" || s === "pending") return "warning";
+  if (s === "trialing" || s === "past_due" || s === "pending") return "warning";
   if (s === "cancelled" || s === "canceled") return "error";
   return "light";
 }
 
 export default function BillingConsolePage() {
+  const { activeId } = useOrganization();
   const subQuery = useSubscription();
   const plansQuery = usePlans();
   const invoicesQuery = useInvoices();
@@ -29,6 +31,20 @@ export default function BillingConsolePage() {
   const plans = plansQuery.data?.data ?? [];
   const invoices = invoicesQuery.data?.data ?? [];
   const entitlements = Array.isArray(sub?.entitlements) ? (sub?.entitlements as string[]) : [];
+
+  if (!activeId) {
+    return (
+      <>
+        <PageMeta title="Billing | Sentrix Console" description="Subscription & billing" />
+        <PageHeader title="Billing" breadcrumbs={[{ label: "Billing" }]} />
+        <div className={card}>
+          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+            No active organization — billing is managed per organization.
+          </p>
+        </div>
+      </>
+    );
+  }
 
   const invoiceColumns: Column<Invoice>[] = [
     {
@@ -72,6 +88,9 @@ export default function BillingConsolePage() {
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-theme-sm text-gray-500 dark:text-gray-400">
               {sub && <StatusBadge tone={statusTone(sub.status)}>{sub.status}</StatusBadge>}
+              {sub?.status === "trialing" && sub.trial_ends_at && (
+                <span>Trial ends {formatDateTime(sub.trial_ends_at)}</span>
+              )}
               {sub?.current_period_end && <span>Renews {formatDateTime(sub.current_period_end)}</span>}
               {sub?.payment_method && <span>· {sub.payment_method}</span>}
             </div>

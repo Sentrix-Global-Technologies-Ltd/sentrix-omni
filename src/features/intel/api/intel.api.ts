@@ -1,7 +1,7 @@
 import { apiClient } from "../../../services/api/client";
 import { downloadFile } from "../../../services/api/download";
 import type { ApiResult } from "../../../services/api/types";
-import type { IntelAnalytics, IntelRange, IntelReport } from "./intel.types";
+import type { IntelAnalytics, IntelDispatchTrend, IntelRange, IntelReport } from "./intel.types";
 
 const base = (orgId: string) => `organizations/${orgId}/intel`;
 
@@ -19,6 +19,11 @@ export const intelApi = {
     return apiClient.get<IntelAnalytics>(`${base(orgId)}/analytics`, {
       query: { range, bucket },
     });
+  },
+
+  /** Rolling 24h vs. prior-24h avg time-to-dispatch — Command Center KPI tile. */
+  dispatchTrend(orgId: string): Promise<ApiResult<IntelDispatchTrend>> {
+    return apiClient.get<IntelDispatchTrend>(`${base(orgId)}/dispatch-trend`);
   },
 
   /** Download the intel report for the range as a CSV (streamed by the backend). */

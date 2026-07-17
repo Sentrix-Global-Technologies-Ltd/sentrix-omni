@@ -5,6 +5,7 @@ import {
   formatDateTime,
   incidentSeverityTone,
   incidentStatusTone,
+  riskTone,
   titleCase,
 } from "./incidentTone";
 import type { Incident } from "../api/incidents.types";
@@ -66,6 +67,18 @@ export default function IncidentTable({
           {formatDateTime(i.opened_at)}
         </span>
       ),
+    },
+    {
+      key: "risk_score",
+      header: "Risk",
+      // undefined = not eager-loaded on this view; null = loaded, no linked
+      // detection (human-opened incident) — both render as a dash.
+      render: (i) =>
+        i.risk_score != null ? (
+          <StatusBadge tone={riskTone(i.risk_score)}>{i.risk_score}</StatusBadge>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
     },
     {
       key: "actions",

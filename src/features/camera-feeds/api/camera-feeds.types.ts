@@ -21,3 +21,9 @@ export interface CameraFeedFilters {
   site?: string;
   page?: number;
 }
+
+/** `GET vision-guard/sources/summary` — Command Center camera-count KPI. */
+export interface CameraSourcesSummary {
+  total: number;
+  online: number;
+}

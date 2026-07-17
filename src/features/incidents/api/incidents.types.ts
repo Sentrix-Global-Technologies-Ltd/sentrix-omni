@@ -19,10 +19,21 @@ export interface Incident {
   severity: IncidentSeverity;
   title: string;
   summary: string | null;
+  /** Highest risk score among detections attributed to this incident (Ingest
+   * pipeline). Only present when the backend eager-loaded detectionEvents
+   * (incident list/detail views); undefined otherwise — null means it loaded
+   * but there's no linked detection (a human-opened incident). */
+  risk_score?: number | null;
   opened_at: string | null;
   escalated_at: string | null;
   resolved_at: string | null;
   closed_at: string | null;
+  /** Honest manual record — no automated authorities-dispatch integration
+   * exists. Set when an operator/supervisor records that they personally
+   * contacted external authorities (see incidents.notify_authorities). */
+  authorities_notified_at: string | null;
+  authorities_notified_by: string | null;
+  authorities_notes: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string | null;
 }

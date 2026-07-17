@@ -4,18 +4,23 @@ import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
 import SecretRevealDialog from "../../../components/shared/SecretRevealDialog";
 import { useToast } from "../../../components/shared/toast";
-import { ApiError } from "../../../services/api/errors";
+import { useOrganization } from "../../../context/OrganizationContext";
 import { useOnboardBridge } from "../hooks/useSiteBridgeActions";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
 
 /**
- * Onboard a Site Bridge (a desktop agent that registers this org's
- * already-installed CCTV/NVR feeds); reveals the one-time bridge key on
- * success. Mirrors OnboardSourceButton (Ledger) exactly.
+ * Onboard a Site Bridge: a machine credential (a generated key) that
+ * authenticates inbound camera-feed ingest for this org's already-installed
+ * CCTV/NVR hardware — either a Sentrix-provided relay process or the
+ * organization's own NVR configured to push directly. There is no separate
+ * downloadable "desktop agent" application; whatever is on-site just needs
+ * this key. Reveals the one-time key on success. Mirrors OnboardSourceButton
+ * (Ledger) exactly.
  */
 export default function OnboardBridgeButton() {
+  const { activeId } = useOrganization();
   const onboard = useOnboardBridge();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -28,28 +33,32 @@ export default function OnboardBridgeButton() {
       setOpen(false);
       setSecret(res.data.bridge_key);
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Could not onboard bridge.");
+      toast.error(e instanceof Error ? e.message : "Could not onboard bridge.");
     }
   };
 
   return (
     <Can permission="bridges.manage">
-      <Button
-        size="sm"
-        variant="primary"
-        onClick={() => {
-          setLabel("");
-          setOpen(true);
-        }}
-      >
-        Onboard bridge
-      </Button>
+      <span title={activeId ? undefined : "Select an organization first — Site Bridges belong to one org."}>
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!activeId}
+          onClick={() => {
+            setLabel("");
+            setOpen(true);
+          }}
+        >
+          Onboard bridge
+        </Button>
+      </span>
 
       <Modal isOpen={open} onClose={() => setOpen(false)} showCloseButton={false} className="mx-4 w-full max-w-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Onboard a Site Bridge</h3>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Give it a name for the site it covers (e.g. "Building A — front lobby"). You'll install the
-          desktop agent there with the key this generates.
+          Give it a name for the site it covers (e.g. "Building A — front lobby"). This generates a
+          one-time key — whatever's on site (a Sentrix relay, or your own NVR configured to push
+          directly) authenticates with it. No separate app to install.
         </p>
         <div className="mt-4 space-y-3">
           <div>

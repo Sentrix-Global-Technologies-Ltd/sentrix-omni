@@ -1,6 +1,6 @@
 import { apiClient } from "../../../services/api/client";
 import type { ApiResult } from "../../../services/api/types";
-import type { CameraFeedFilters, CameraSource } from "./camera-feeds.types";
+import type { CameraFeedFilters, CameraSource, CameraSourcesSummary } from "./camera-feeds.types";
 
 const base = (orgId: string) => `organizations/${orgId}/vision-guard/sources`;
 
@@ -12,5 +12,10 @@ export const cameraFeedsApi = {
     return apiClient.get<CameraSource[]>(base(orgId), {
       query: { site: filters.site || undefined, page: filters.page },
     });
+  },
+
+  /** Total vs. online camera count — the Command Center KPI tile. */
+  summary(orgId: string): Promise<ApiResult<CameraSourcesSummary>> {
+    return apiClient.get<CameraSourcesSummary>(`${base(orgId)}/summary`);
   },
 };

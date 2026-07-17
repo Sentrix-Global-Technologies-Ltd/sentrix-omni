@@ -14,6 +14,20 @@ export function useIntelReport(range: IntelRange) {
   });
 }
 
+/** Command Center KPI tile: rolling 24h vs. prior-24h avg time-to-dispatch.
+ * Polled at the same cadence as the backend's cache TTL (30s) since there's
+ * no single realtime event that maps to "this rolling aggregate changed". */
+export function useIntelDispatchTrend() {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: intelKeys.dispatchTrend(activeId ?? "none"),
+    queryFn: () => intelApi.dispatchTrend(activeId as string),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
+    refetchInterval: 30000,
+  });
+}
+
 export function useIntelAnalytics(range: IntelRange, bucket: string) {
   const { activeId } = useOrganization();
   return useQuery({

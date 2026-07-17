@@ -43,7 +43,7 @@ export default function BridgeActions({ bridge }: { bridge: CameraBridge }) {
             label="Activate"
             triggerVariant="primary"
             title="Activate bridge?"
-            description={`Activate "${bridge.label}". It will accept ingest from the desktop agent.`}
+            description={`Activate "${bridge.label}". It will accept ingest authenticated with its key.`}
             confirmLabel="Activate"
             successMessage="Bridge activated"
             onConfirm={() => a.activate.mutateAsync()}

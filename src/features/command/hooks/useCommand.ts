@@ -9,10 +9,11 @@ import type {
   UnitFilters,
 } from "../api/command.types";
 
-export function useCommandOverview() {
+export function useCommandOverview(enabled = true) {
   return useQuery({
     queryKey: commandKeys.overview(),
     queryFn: () => commandApi.overview(),
+    enabled,
   });
 }
 

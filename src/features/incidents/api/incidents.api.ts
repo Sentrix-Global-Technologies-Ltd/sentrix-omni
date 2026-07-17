@@ -46,6 +46,11 @@ export const incidentsApi = {
   escalate(orgId: string, id: string): Promise<ApiResult<Incident>> {
     return apiClient.post<Incident>(`${base(orgId)}/${id}/escalate`);
   },
+  // Honest manual record — no automated authorities-dispatch integration
+  // exists. See IncidentService::notifyAuthorities() on the backend.
+  notifyAuthorities(orgId: string, id: string, notes?: string): Promise<ApiResult<Incident>> {
+    return apiClient.post<Incident>(`${base(orgId)}/${id}/notify-authorities`, { notes });
+  },
   resolve(orgId: string, id: string): Promise<ApiResult<Incident>> {
     return apiClient.post<Incident>(`${base(orgId)}/${id}/resolve`);
   },

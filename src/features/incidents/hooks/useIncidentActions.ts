@@ -27,6 +27,10 @@ export function useIncidentActions(id: string) {
       mutationFn: () => incidentsApi.escalate(activeId as string, id),
       onSuccess,
     }),
+    notifyAuthorities: useMutation({
+      mutationFn: (notes?: string) => incidentsApi.notifyAuthorities(activeId as string, id, notes),
+      onSuccess,
+    }),
     resolve: useMutation({
       mutationFn: () => incidentsApi.resolve(activeId as string, id),
       onSuccess,
