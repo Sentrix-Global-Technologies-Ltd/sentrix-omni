@@ -19,9 +19,11 @@ import {
   PieChartIcon,
   PlugInIcon,
   ShootingStarIcon,
+  TableIcon,
   TaskIcon,
   TrashBinIcon,
   UserCircleIcon,
+  VideoIcon,
 } from "../icons";
 import type { AccessRule } from "../authz/access";
 
@@ -196,6 +198,59 @@ export const navigation: NavGroup[] = [
     ],
   },
   {
+    // A dedicated section for the org's camera/surveillance estate. Reuses
+    // existing permission-gated data end to end — Live Monitoring and Camera
+    // Sources are org-scoped (bridges.view/bridges.manage), Evidence Vault and
+    // Sites link the SAME pages already reachable from Monitoring/SuperAdmin
+    // (no duplicated backend, no new permission scheme). AI Analytics reuses
+    // the Intel domain's intel.view permission (ThreatScoreService).
+    title: "Vision Guard",
+    items: [
+      {
+        key: "vision-guard-live",
+        label: "Live Monitoring",
+        path: "/vision-guard/live",
+        icon: <VideoIcon />,
+        access: { anyPermission: ["bridges.view"] },
+      },
+      {
+        key: "vision-guard-camera-sources",
+        label: "Camera Sources",
+        path: "/vision-guard/camera-sources",
+        icon: <TableIcon />,
+        access: { anyPermission: ["bridges.view"] },
+      },
+      {
+        key: "vision-guard-facility-map",
+        label: "Facility Map",
+        path: "/vision-guard/facility-map",
+        icon: <MapPinIcon />,
+        access: { anyPermission: ["hardware.view"] },
+      },
+      {
+        key: "vision-guard-ai-analytics",
+        label: "AI Analytics",
+        path: "/vision-guard/ai-analytics",
+        icon: <PieChartIcon />,
+        access: { anyPermission: ["intel.view"] },
+      },
+      {
+        key: "vision-guard-evidence",
+        label: "Evidence Vault",
+        path: "/evidence",
+        icon: <FileIcon />,
+        access: { anyPermission: ["evidence.view"] },
+      },
+      {
+        key: "vision-guard-sites",
+        label: "Sites",
+        path: "/superadmin/organizations",
+        icon: <GroupIcon />,
+        access: { anyPermission: ["organizations.view"] },
+      },
+    ],
+  },
+  {
     title: "System",
     items: [
       {
@@ -281,6 +336,8 @@ export const navigation: NavGroup[] = [
             "hardware.provision",
             "support.tickets.view",
             "support.tickets.manage",
+            "verifications.view",
+            "vision-guard.consumer.view",
           ],
         },
       },
@@ -322,9 +379,17 @@ export const superAdminSubPathAccess: Record<string, AccessRule> = {
   },
   "/superadmin/security": { anyPermission: ["security.posture.view"] },
   "/superadmin/support": { anyPermission: ["support.tickets.view", "support.tickets.manage"] },
+  "/superadmin/verifications": { anyPermission: ["verifications.view"] },
+  "/superadmin/consumer-vision": { anyPermission: ["vision-guard.consumer.view"] },
+  "/superadmin/road-risk": { anyPermission: ["roadrisk.view", "roadrisk.manage"] },
+  "/superadmin/community": { anyPermission: ["community.view", "community.manage"] },
   // Cross-tenant subscription oversight is SuperAdmin-only by explicit
   // product decision — unlike the sections above, it is NOT delegable to any
   // PlatformRole (mirrors PlatformSubscriptionController's isSuperAdmin() gate).
   "/superadmin/subscriptions": { superAdminOnly: true },
+  // Cross-tenant organization directory — delegable beyond SuperAdmin
+  // (OnboardingManager, SentrixEngineer both hold organizations.view; see
+  // PlatformOrganizationController).
+  "/superadmin/organizations": { anyPermission: ["organizations.view"] },
 };
 

@@ -45,3 +45,28 @@ export function useIntelExport() {
     mutationFn: (range: IntelRange) => intelApi.exportCsv(activeId as string, range),
   });
 }
+
+/** AI Analytics headline gauge. Polled at the backend's own cache TTL (30s) —
+ * same rationale as useIntelDispatchTrend: no single realtime event maps to
+ * "this rolling aggregate changed". */
+export function useThreatScore() {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: intelKeys.threatScore(activeId ?? "none"),
+    queryFn: () => intelApi.threatScore(activeId as string),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
+    refetchInterval: 30000,
+  });
+}
+
+/** Persisted Threat Score history (hourly snapshots) for the trend chart. */
+export function useThreatScoreHistory(hours = 24 * 7) {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: intelKeys.threatScoreHistory(activeId ?? "none", hours),
+    queryFn: () => intelApi.threatScoreHistory(activeId as string, hours),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
+  });
+}

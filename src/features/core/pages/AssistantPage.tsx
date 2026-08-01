@@ -3,6 +3,8 @@ import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
 import Button from "../../../components/ui/button/Button";
 import { useCoreChat } from "../hooks/useCoreChat";
+import { MarkdownLite } from "../components/MarkdownLite";
+import { ChatHistoryMenu } from "../components/ChatHistoryMenu";
 
 const SUGGESTIONS = [
   "What's open right now?",
@@ -11,7 +13,7 @@ const SUGGESTIONS = [
 ];
 
 export default function AssistantPage() {
-  const { messages, streaming, error, send, stop, reset } = useCoreChat();
+  const { messages, streaming, error, send, stop, reset, openThread } = useCoreChat();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,11 +41,14 @@ export default function AssistantPage() {
         title="Assistant"
         breadcrumbs={[{ label: "Assistant" }]}
         actions={
-          messages.length > 0 ? (
-            <Button size="sm" variant="outline" onClick={reset}>
-              New chat
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ChatHistoryMenu onSelectThread={openThread} />
+            {messages.length > 0 ? (
+              <Button size="sm" variant="outline" onClick={reset}>
+                New chat
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -71,13 +76,17 @@ export default function AssistantPage() {
             messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
                     m.role === "user"
-                      ? "bg-brand-500 text-white"
+                      ? "whitespace-pre-wrap bg-brand-500 text-white"
                       : "bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white/90"
                   }`}
                 >
-                  {m.content || (streaming ? "…" : "")}
+                  {m.role === "user" ? (
+                    m.content
+                  ) : (
+                    <MarkdownLite text={m.content || (streaming ? "…" : "")} />
+                  )}
                 </div>
               </div>
             ))

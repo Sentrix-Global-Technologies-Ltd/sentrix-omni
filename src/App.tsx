@@ -14,6 +14,7 @@ const SignIn = lazy(() => import("./pages/AuthPages/SignIn"));
 const ForgotPassword = lazy(() => import("./pages/AuthPages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/AuthPages/ResetPassword"));
 const AcceptInvitation = lazy(() => import("./pages/AuthPages/AcceptInvitation"));
+const EmailVerified = lazy(() => import("./pages/AuthPages/EmailVerified"));
 const NotFound = lazy(() => import("./pages/OtherPage/NotFound"));
 const Home = lazy(() => import("./features/dashboard/pages/DashboardHomePage"));
 const UserProfiles = lazy(() => import("./pages/UserProfiles"));
@@ -42,6 +43,10 @@ const TrackingPage = lazy(() => import("./features/tracking/pages/TrackingPage")
 const EvidenceConsolePage = lazy(() => import("./features/evidence/pages/EvidenceConsolePage"));
 const IntelConsolePage = lazy(() => import("./features/intel/pages/IntelConsolePage"));
 const HardwareConsolePage = lazy(() => import("./features/hardware/pages/HardwareConsolePage"));
+const LiveMonitoringPage = lazy(() => import("./features/camera-feeds/pages/LiveMonitoringPage"));
+const CameraSourcesPage = lazy(() => import("./features/camera-feeds/pages/CameraSourcesPage"));
+const FacilityMapPage = lazy(() => import("./features/facility/pages/FacilityMapPage"));
+const AiAnalyticsPage = lazy(() => import("./features/intel/pages/AiAnalyticsPage"));
 const AccessConsolePage = lazy(() => import("./features/access/pages/AccessConsolePage"));
 const WebhooksConsolePage = lazy(() => import("./features/webhooks/pages/WebhooksConsolePage"));
 const InsuranceConsolePage = lazy(() => import("./features/insurance/pages/InsuranceConsolePage"));
@@ -65,7 +70,13 @@ const RidesOpsConsolePage = lazy(() => import("./features/ridesops/pages/RidesOp
 const CommandConsolePage = lazy(() => import("./features/command/pages/CommandConsolePage"));
 const SecurityPosturePage = lazy(() => import("./features/superadmin/pages/SecurityPosturePage"));
 const SupportQueuePage = lazy(() => import("./features/superadmin/pages/SupportQueuePage"));
+const VerificationsQueuePage = lazy(() => import("./features/superadmin/pages/VerificationsQueuePage"));
+const ConsumerVisionPage = lazy(() => import("./features/superadmin/pages/ConsumerVisionPage"));
+const RoadRiskPage = lazy(() => import("./features/roadrisk/pages/RoadRiskPage"));
+const CommunityModerationPage = lazy(() => import("./features/community/pages/CommunityModerationPage"));
 const SubscriptionsOverviewPage = lazy(() => import("./features/superadmin/pages/SubscriptionsOverviewPage"));
+const OrganizationsDirectoryPage = lazy(() => import("./features/superadmin/pages/OrganizationsDirectoryPage"));
+const OrganizationDetailPage = lazy(() => import("./features/superadmin/pages/OrganizationDetailPage"));
 
 export default function App() {
   return (
@@ -96,6 +107,15 @@ export default function App() {
               session yet at all, or may be signed in as a different account.
             */}
             <Route path="/invitations/:token/accept" element={<AcceptInvitation />} />
+
+            {/*
+              Email verification: the emailed "Verify Email Address" link
+              (VerifyEmailController::__invoke() on the backend) redirects
+              here with ?status=success on completion. Same reasoning as
+              password reset / accept-invitation above — must work regardless
+              of auth state.
+            */}
+            <Route path="/email/verified" element={<EmailVerified />} />
 
             {/* Authenticated console */}
             <Route element={<ProtectedRoute />}>
@@ -134,6 +154,18 @@ export default function App() {
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/hardware"]} />}>
                   <Route path="/hardware" element={<HardwareConsolePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={accessByPath["/vision-guard/live"]} />}>
+                  <Route path="/vision-guard/live" element={<LiveMonitoringPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={accessByPath["/vision-guard/camera-sources"]} />}>
+                  <Route path="/vision-guard/camera-sources" element={<CameraSourcesPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={accessByPath["/vision-guard/facility-map"]} />}>
+                  <Route path="/vision-guard/facility-map" element={<FacilityMapPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={accessByPath["/vision-guard/ai-analytics"]} />}>
+                  <Route path="/vision-guard/ai-analytics" element={<AiAnalyticsPage />} />
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/access"]} />}>
                   <Route path="/access" element={<AccessConsolePage />} />
@@ -204,8 +236,24 @@ export default function App() {
                 <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/support"]} />}>
                   <Route path="/superadmin/support" element={<SupportQueuePage />} />
                 </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/verifications"]} />}>
+                  <Route path="/superadmin/verifications" element={<VerificationsQueuePage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/consumer-vision"]} />}>
+                  <Route path="/superadmin/consumer-vision" element={<ConsumerVisionPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/road-risk"]} />}>
+                  <Route path="/superadmin/road-risk" element={<RoadRiskPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/community"]} />}>
+                  <Route path="/superadmin/community" element={<CommunityModerationPage />} />
+                </Route>
                 <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/subscriptions"]} />}>
                   <Route path="/superadmin/subscriptions" element={<SubscriptionsOverviewPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={superAdminSubPathAccess["/superadmin/organizations"]} />}>
+                  <Route path="/superadmin/organizations" element={<OrganizationsDirectoryPage />} />
+                  <Route path="/superadmin/organizations/:id" element={<OrganizationDetailPage />} />
                 </Route>
 
                 {/* Template component reference pages (kept; not in production nav) */}

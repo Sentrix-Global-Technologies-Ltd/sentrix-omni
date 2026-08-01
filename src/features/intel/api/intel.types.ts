@@ -50,3 +50,33 @@ export interface IntelDispatchTrend {
   current: DurationSummary & { since: string; until: string };
   previous: DurationSummary & { since: string; until: string };
 }
+
+/** A contributing detection type behind the current Threat Score, with its
+ * % change vs. the prior equal-length window (null = no prior occurrences,
+ * a % change from zero is undefined rather than "infinite"). */
+export interface ThreatFactor {
+  type: string;
+  count: number;
+  change_pct: number | null;
+}
+
+/** `GET intel/threat-score` — see backend ThreatScoreService: a deterministic
+ * roll-up of detection_events.risk_score (itself produced by DecisionEngine
+ * from Sentrix Core's vision analysis) plus open incidents/emergencies. Not a
+ * separate model — this mirrors the real computed number 1:1. */
+export interface ThreatScore {
+  score: number;
+  avg_risk_score: number;
+  open_incidents_count: number;
+  active_emergencies_count: number;
+  factors: ThreatFactor[];
+}
+
+/** One persisted `GET intel/threat-score/history` point (hourly snapshots). */
+export interface ThreatScoreSnapshot {
+  score: number;
+  avg_risk_score: number;
+  open_incidents_count: number;
+  active_emergencies_count: number;
+  computed_at: string;
+}

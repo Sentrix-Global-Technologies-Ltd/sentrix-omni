@@ -6,7 +6,7 @@ import FilterSelect from "../../../components/shared/FilterSelect";
 import FilterText from "../../../components/shared/FilterText";
 import Pagination from "../../../components/ui/pagination/Pagination";
 import Can from "../../../components/shared/Can";
-import { SUPPORT_TICKET_STATUS_OPTIONS } from "../../support/components/supportTicketTone";
+import { SUPPORT_TICKET_SOURCE_OPTIONS, SUPPORT_TICKET_STATUS_OPTIONS } from "../../support/components/supportTicketTone";
 import SupportQueueTable from "../components/SupportQueueTable";
 import TriageTicketModal from "../components/TriageTicketModal";
 import { useSupportQueue } from "../hooks/useSupportQueue";
@@ -28,10 +28,11 @@ interface PaginatorMeta {
 export default function SupportQueuePage() {
   const [status, setStatus] = useState("");
   const [organizationId, setOrganizationId] = useState("");
+  const [source, setSource] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<SupportTicket | null>(null);
 
-  const query = useSupportQueue({ status, organization_id: organizationId, page });
+  const query = useSupportQueue({ status, organization_id: organizationId, source, page });
   const meta = query.data?.meta as PaginatorMeta | undefined;
 
   return (
@@ -48,11 +49,12 @@ export default function SupportQueuePage() {
       >
         <FilterBar
           trailing={
-            (status || organizationId) && (
+            (status || organizationId || source) && (
               <button
                 onClick={() => {
                   setStatus("");
                   setOrganizationId("");
+                  setSource("");
                   setPage(1);
                 }}
                 className="text-theme-sm font-medium text-brand-500 hover:underline"
@@ -68,6 +70,15 @@ export default function SupportQueuePage() {
             options={SUPPORT_TICKET_STATUS_OPTIONS}
             onChange={(v) => {
               setStatus(v);
+              setPage(1);
+            }}
+          />
+          <FilterSelect
+            label="Source"
+            value={source}
+            options={SUPPORT_TICKET_SOURCE_OPTIONS}
+            onChange={(v) => {
+              setSource(v);
               setPage(1);
             }}
           />

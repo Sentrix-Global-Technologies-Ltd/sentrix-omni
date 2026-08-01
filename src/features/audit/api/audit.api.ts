@@ -7,7 +7,12 @@ const base = (orgId: string) => `organizations/${orgId}/audit-logs`;
 export const auditApi = {
   list(orgId: string, filters: AuditFilters): Promise<ApiResult<AuditLog[]>> {
     return apiClient.get<AuditLog[]>(base(orgId), {
-      query: { action: filters.action || undefined, cursor: filters.cursor || undefined },
+      query: {
+        action: filters.action || undefined,
+        subject_type: filters.subject_type || undefined,
+        subject_id: filters.subject_id || undefined,
+        cursor: filters.cursor || undefined,
+      },
     });
   },
 };

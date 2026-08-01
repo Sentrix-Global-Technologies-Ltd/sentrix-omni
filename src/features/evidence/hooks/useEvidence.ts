@@ -24,3 +24,24 @@ export function useEvidenceStats() {
     enabled: Boolean(activeId),
   });
 }
+
+/** Paginated Evidence Collections (case files) for the active org. */
+export function useEvidenceCollections(page: number) {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: evidenceKeys.collections(activeId ?? "none", page),
+    queryFn: () => evidenceApi.listCollections(activeId as string, page),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** One Evidence Collection with its full member observation list. */
+export function useEvidenceCollection(id: string | null) {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: evidenceKeys.collection(activeId ?? "none", id ?? "none"),
+    queryFn: () => evidenceApi.getCollection(activeId as string, id as string),
+    enabled: Boolean(activeId) && Boolean(id),
+  });
+}

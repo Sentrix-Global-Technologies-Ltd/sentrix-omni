@@ -1,6 +1,6 @@
 import { apiClient } from "../../../services/api/client";
 import type { ApiResult } from "../../../services/api/types";
-import type { EvidenceFilters, EvidenceStats, Observation } from "./evidence.types";
+import type { EvidenceCollection, EvidenceFilters, EvidenceStats, Observation } from "./evidence.types";
 
 const base = (orgId: string) => `organizations/${orgId}/evidence`;
 
@@ -29,5 +29,39 @@ export const evidenceApi = {
   },
   bookmark(orgId: string, id: string, bookmarked: boolean): Promise<ApiResult<Observation>> {
     return apiClient.post<Observation>(`${base(orgId)}/${id}/bookmark`, { bookmarked });
+  },
+
+  // --- Collections (case-file groupings over existing observations) ---
+  listCollections(orgId: string, page = 1): Promise<ApiResult<EvidenceCollection[]>> {
+    return apiClient.get<EvidenceCollection[]>(`${base(orgId)}/collections`, { query: { page } });
+  },
+  getCollection(orgId: string, id: string): Promise<ApiResult<EvidenceCollection>> {
+    return apiClient.get<EvidenceCollection>(`${base(orgId)}/collections/${id}`);
+  },
+  createCollection(
+    orgId: string,
+    payload: { name: string; description?: string; observation_ids?: string[] },
+  ): Promise<ApiResult<EvidenceCollection>> {
+    return apiClient.post<EvidenceCollection>(`${base(orgId)}/collections`, payload);
+  },
+  updateCollection(
+    orgId: string,
+    id: string,
+    payload: { name?: string; description?: string },
+  ): Promise<ApiResult<EvidenceCollection>> {
+    return apiClient.patch<EvidenceCollection>(`${base(orgId)}/collections/${id}`, payload);
+  },
+  deleteCollection(orgId: string, id: string): Promise<ApiResult<null>> {
+    return apiClient.delete<null>(`${base(orgId)}/collections/${id}`);
+  },
+  addToCollection(orgId: string, id: string, observationIds: string[]): Promise<ApiResult<EvidenceCollection>> {
+    return apiClient.post<EvidenceCollection>(`${base(orgId)}/collections/${id}/observations`, {
+      observation_ids: observationIds,
+    });
+  },
+  removeFromCollection(orgId: string, id: string, observationIds: string[]): Promise<ApiResult<EvidenceCollection>> {
+    return apiClient.delete<EvidenceCollection>(`${base(orgId)}/collections/${id}/observations`, {
+      observation_ids: observationIds,
+    });
   },
 };

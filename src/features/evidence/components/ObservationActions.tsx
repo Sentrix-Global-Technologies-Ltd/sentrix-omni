@@ -1,14 +1,27 @@
+import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
 import { useObservationActions } from "../hooks/useEvidenceActions";
 import type { Observation } from "../api/evidence.types";
 
-/** Per-row observation actions: hold/release (evidence.hold) + bookmark toggle. */
-export default function ObservationActions({ observation }: { observation: Observation }) {
+interface Props {
+  observation: Observation;
+  /** Opens the chain-of-custody viewer for this observation (see CustodyModal). */
+  onViewCustody?: (observation: Observation) => void;
+}
+
+/** Per-row observation actions: hold/release (evidence.hold) + bookmark toggle
+ * + a read-only "Custody" trail viewer (evidence.view — same tier as the vault). */
+export default function ObservationActions({ observation, onViewCustody }: Props) {
   const a = useObservationActions(observation.id);
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
+      {onViewCustody && (
+        <Button size="sm" variant="outline" onClick={() => onViewCustody(observation)}>
+          Custody
+        </Button>
+      )}
       <Can permission="evidence.view">
         <ConfirmActionButton
           label={observation.bookmarked ? "Unbookmark" : "Bookmark"}

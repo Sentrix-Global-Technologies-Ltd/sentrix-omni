@@ -1,7 +1,14 @@
 import { apiClient } from "../../../services/api/client";
 import { downloadFile } from "../../../services/api/download";
 import type { ApiResult } from "../../../services/api/types";
-import type { IntelAnalytics, IntelDispatchTrend, IntelRange, IntelReport } from "./intel.types";
+import type {
+  IntelAnalytics,
+  IntelDispatchTrend,
+  IntelRange,
+  IntelReport,
+  ThreatScore,
+  ThreatScoreSnapshot,
+} from "./intel.types";
 
 const base = (orgId: string) => `organizations/${orgId}/intel`;
 
@@ -31,6 +38,18 @@ export const intelApi = {
     return downloadFile(`${base(orgId)}/reports/export`, {
       query: { range, format: "csv" },
       organizationId: orgId,
+    });
+  },
+
+  /** AI Analytics headline gauge + contributing factors — see ThreatScoreService. */
+  threatScore(orgId: string): Promise<ApiResult<ThreatScore>> {
+    return apiClient.get<ThreatScore>(`${base(orgId)}/threat-score`);
+  },
+
+  /** Persisted hourly Threat Score history for the AI Analytics trend chart. */
+  threatScoreHistory(orgId: string, hours = 24 * 7): Promise<ApiResult<ThreatScoreSnapshot[]>> {
+    return apiClient.get<ThreatScoreSnapshot[]>(`${base(orgId)}/threat-score/history`, {
+      query: { hours },
     });
   },
 };

@@ -9,10 +9,11 @@ interface Props {
   isLoading?: boolean;
   error?: unknown;
   onRetry?: () => void;
+  onViewCustody?: (observation: Observation) => void;
 }
 
 /** Evidence observation table (read + per-row actions). */
-export default function ObservationTable({ observations, isLoading, error, onRetry }: Props) {
+export default function ObservationTable({ observations, isLoading, error, onRetry, onViewCustody }: Props) {
   const columns: Column<Observation>[] = [
     {
       key: "observation",
@@ -92,7 +93,7 @@ export default function ObservationTable({ observations, isLoading, error, onRet
       header: "",
       headerClassName: "text-right",
       className: "text-right",
-      render: (o) => <ObservationActions observation={o} />,
+      render: (o) => <ObservationActions observation={o} onViewCustody={onViewCustody} />,
     },
   ];
 

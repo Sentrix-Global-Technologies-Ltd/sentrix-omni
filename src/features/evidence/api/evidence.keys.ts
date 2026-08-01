@@ -6,4 +6,6 @@ export const evidenceKeys = {
   search: (orgId: string, filters: EvidenceFilters) =>
     ["evidence", orgId, "search", filters] as const,
   stats: (orgId: string) => ["evidence", orgId, "stats"] as const,
+  collections: (orgId: string, page: number) => ["evidence", orgId, "collections", page] as const,
+  collection: (orgId: string, id: string) => ["evidence", orgId, "collections", id] as const,
 };

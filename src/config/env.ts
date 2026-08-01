@@ -42,4 +42,12 @@ export const env = {
     port: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
     scheme: (import.meta.env.VITE_REVERB_SCHEME as string | undefined) ?? "http",
   },
+
+  /**
+   * Google Maps JavaScript API key — a browser key restricted by HTTP
+   * referrer (this dashboard's domain + localhost for dev), separate from
+   * the backend's server-side SENTRIX_GOOGLE_MAPS_API_KEY (Directions) and
+   * mobile's native-SDK GOOGLE_MAPS_API_KEY. Used by components/shared/MapView.
+   */
+  googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? "",
 } as const;

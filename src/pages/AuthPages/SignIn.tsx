@@ -7,7 +7,7 @@ export default function SignIn() {
     <>
       <PageMeta
         title="Sign In | Sentrix Console"
-        description="Sign in to the Sentrix Console — safety & security operations."
+        description="Sign in to the Sentrix Console - safety & security operations."
       />
       <AuthLayout>
         <SignInForm />

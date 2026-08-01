@@ -60,8 +60,8 @@ export default function TriageTicketModal({ ticket, onClose }: Props) {
         Ref {ticket.id.slice(0, 8)}
       </p>
       <p className="mt-1 text-theme-xs text-gray-400">
-        {ticket.organization?.name ?? "Unknown org"} · {ticket.submitter?.name ?? "Unknown"} (
-        {ticket.submitter?.email ?? "—"}) ·{" "}
+        {ticket.source_label} · {ticket.organization?.name ?? (ticket.source === "mobile" ? "Consumer app" : "Unknown org")} ·{" "}
+        {ticket.submitter?.name ?? "Unknown"} ({ticket.submitter?.email ?? "—"}) ·{" "}
         {ticket.category === "other" ? ticket.other_category ?? "Other" : ticket.category_label}
       </p>
       <p className="mt-3 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{ticket.description}</p>

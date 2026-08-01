@@ -5,6 +5,8 @@ import type { SupportTicket } from "../../support/api/support.types";
 export interface SupportQueueFilters {
   status?: string;
   organization_id?: string;
+  /** 'mobile' | 'dashboard' — which surface the ticket was submitted from. */
+  source?: string;
   page?: number;
 }
 
@@ -23,6 +25,7 @@ export const supportQueueApi = {
       query: {
         status: filters.status || undefined,
         organization_id: filters.organization_id || undefined,
+        source: filters.source || undefined,
         page: filters.page,
       },
     });

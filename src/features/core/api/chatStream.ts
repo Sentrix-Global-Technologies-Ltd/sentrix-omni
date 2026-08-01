@@ -4,9 +4,15 @@ import { tokenStorage } from "../../../services/api/tokenStorage";
 interface StreamChatOptions {
   message: string;
   organizationId: string | null;
+  /** Continue an existing conversation. Omit on the first message of a new one
+   *  — the backend creates a thread lazily and reports its id via onThreadId. */
+  threadId?: string | null;
   signal: AbortSignal;
   /** Called for each streamed text token. */
   onToken: (text: string) => void;
+  /** Called once, synchronously before any tokens, with the thread id the
+   *  backend is persisting this turn into (new or continued). */
+  onThreadId?: (threadId: string) => void;
 }
 
 /**
@@ -20,7 +26,14 @@ interface StreamChatOptions {
  * Uses a raw fetch (not the JSON apiClient) because the body is a stream, but it
  * mirrors the client's auth: sessionStorage bearer token + the active-org header.
  */
-export async function streamChat({ message, organizationId, signal, onToken }: StreamChatOptions): Promise<void> {
+export async function streamChat({
+  message,
+  organizationId,
+  threadId,
+  signal,
+  onToken,
+  onThreadId,
+}: StreamChatOptions): Promise<void> {
   const token = tokenStorage.get();
 
   const headers: Record<string, string> = {
@@ -33,13 +46,20 @@ export async function streamChat({ message, organizationId, signal, onToken }: S
   const response = await fetch(`${env.apiBaseUrl}/core/chat`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ message, organization_id: organizationId }),
+    body: JSON.stringify({
+      message,
+      organization_id: organizationId,
+      ...(threadId ? { thread_id: threadId } : {}),
+    }),
     signal,
   });
 
   if (!response.ok || !response.body) {
     throw new Error(`Chat request failed (${response.status})`);
   }
+
+  const returnedThreadId = response.headers.get("X-Sentrix-Thread-Id");
+  if (returnedThreadId) onThreadId?.(returnedThreadId);
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

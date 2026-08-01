@@ -1,6 +1,6 @@
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
-import { formatDateTime, humanize, supportTicketStatusTone } from "../../support/components/supportTicketTone";
+import { formatDateTime, humanize, supportTicketSourceTone, supportTicketStatusTone } from "../../support/components/supportTicketTone";
 import type { SupportTicket } from "../../support/api/support.types";
 
 interface Props {
@@ -24,10 +24,19 @@ export default function SupportQueueTable({ tickets, isLoading, error, onRetry, 
       ),
     },
     {
+      key: "source",
+      header: "Source",
+      render: (t) => (
+        <StatusBadge tone={supportTicketSourceTone(t.source)}>{t.source_label}</StatusBadge>
+      ),
+    },
+    {
       key: "organization",
       header: "Organization",
       render: (t) => (
-        <span className="text-gray-700 dark:text-gray-300">{t.organization?.name ?? "—"}</span>
+        <span className="text-gray-700 dark:text-gray-300">
+          {t.organization?.name ?? (t.source === "mobile" ? "Consumer app" : "—")}
+        </span>
       ),
     },
     {

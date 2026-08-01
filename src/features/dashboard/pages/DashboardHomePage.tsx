@@ -27,7 +27,7 @@ import DispatchQueuePanel from "../components/DispatchQueuePanel";
 import ResponderAvailabilityPanel from "../components/ResponderAvailabilityPanel";
 import ActivityTimelinePanel from "../components/ActivityTimelinePanel";
 import EscalationPanel from "../components/EscalationPanel";
-// import NotificationSummaryPanel from "../components/NotificationSummaryPanel";
+import NotificationSummaryPanel from "../components/NotificationSummaryPanel";
 import AIInsightsPlaceholder from "../components/AIInsightsPlaceholder";
 import CameraWallPanel from "../components/CameraWallPanel";
 import CommunityHotspotPanel from "../../community/components/CommunityHotspotPanel";
@@ -210,7 +210,7 @@ export default function DashboardHomePage() {
           />
 
           {/* 8. Notification summary */}
-          {/* <NotificationSummaryPanel /> */}
+          <NotificationSummaryPanel />
 
           {/* 9. AI Insights placeholder */}
           <AIInsightsPlaceholder />

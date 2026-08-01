@@ -40,3 +40,21 @@ export interface EvidenceFilters {
   /** Cursor (keyset) pagination token. */
   cursor?: string;
 }
+
+/** A user-curated case-file grouping of existing Observations. Membership
+ * never mutates an observation's hold/seal/retention_tier — see the backend
+ * EvidenceCollectionService docblock. */
+export interface EvidenceCollection {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  created_by: string | null;
+  creator_name?: string | null;
+  /** Present on index()/show() (withCount), absent elsewhere. */
+  observations_count?: number;
+  /** Present only on show() and after an add/remove mutation. */
+  observations?: Observation[];
+  created_at: string | null;
+  updated_at: string | null;
+}

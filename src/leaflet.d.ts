@@ -1,10 +1,5 @@
-// Ambient shim for Leaflet.
-//
-// Leaflet ships no type declarations and we intentionally avoid the
-// @types/leaflet dev-dependency (keeping the dependency tree lean). This file
-// is a non-module (no imports/exports), so it is a global ambient declaration
-// — declaring the module as `any`. It must live in a standalone .d.ts; placing
-// `declare module "leaflet"` inside a .tsx is read as a module *augmentation*,
-// which TypeScript rejects for an untyped module (TS2665).
-declare module "leaflet";
-declare module "leaflet/dist/leaflet.css";
+// Obsolete: MapView.tsx moved from Leaflet to Google Maps (@googlemaps/js-api-loader
+// + @types/google.maps, which ships its own types — no ambient shim needed).
+// This file is a harmless no-op leftover; safe to delete manually (the
+// available tools here can't remove files from the repo).
+export {};

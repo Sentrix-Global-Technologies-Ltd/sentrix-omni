@@ -19,6 +19,10 @@ export interface AuditLog {
 
 export interface AuditFilters {
   action?: string;
+  /** Chain-of-custody: scope the trail to one record (see
+   * AuditLogController::SUBJECT_TYPES for the allowed subject_type aliases). */
+  subject_type?: "observation" | "evidence_collection";
+  subject_id?: string;
   /** Cursor (keyset) pagination token. */
   cursor?: string;
 }

@@ -12,10 +12,16 @@ export type SupportTicketCategory =
   | "feature_request"
   | "other";
 
+/** Which surface a ticket was submitted from — set server-side, never editable. */
+export type SupportTicketSource = "mobile" | "dashboard";
+
 export interface SupportTicket {
   id: string;
-  organization_id: string;
-  organization?: { id: string; name: string };
+  // Null for consumer/mobile tickets — they aren't tied to any organization.
+  organization_id: string | null;
+  organization?: { id: string; name: string } | null;
+  source: SupportTicketSource;
+  source_label: string;
   submitted_by: string;
   submitter?: { id: string; name: string; email: string };
   title: string;

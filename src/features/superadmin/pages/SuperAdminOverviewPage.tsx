@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import { AlertHexaIcon, ChatIcon, DollarLineIcon, GroupIcon, LockIcon, MapPinIcon, PieChartIcon } from "../../../icons";
+import { AlertHexaIcon, AlertIcon, ChatIcon, DollarLineIcon, GridIcon, GroupIcon, LockIcon, MapPinIcon, PieChartIcon, TaskIcon, VideoIcon } from "../../../icons";
 import { useLeads } from "../../crm/hooks/useLeads";
 import { useLedgerStats } from "../../ledger/hooks/useLedger";
 import { useRidesOverview } from "../../ridesops/hooks/useRidesOps";
 import { useCommandOverview } from "../../command/hooks/useCommand";
+import { usePlatformOrganizations } from "../hooks/usePlatformOrganizations";
 import Can from "../../../components/shared/Can";
 import ProvisionBridgeButton from "../components/ProvisionBridgeButton";
 import CreateOrganizationButton from "../../settings/components/CreateOrganizationButton";
@@ -49,13 +50,16 @@ export default function SuperAdminOverviewPage() {
     "coordination.view",
     "coordination.act",
   ]);
+  const canOrganizations = canAny(["organizations.view"]);
 
   const leads = useLeads({ per_page: 1 }, canLeads);
   const ledger = useLedgerStats(canLedger);
   const rides = useRidesOverview(canRides);
   const command = useCommandOverview(canCommand);
+  const organizations = usePlatformOrganizations({ per_page: 1 }, canOrganizations);
 
   const leadsTotal = leads.data?.meta?.total;
+  const organizationsTotal = organizations.data?.meta?.total;
 
   // Each tile is only offered if the viewer actually holds a permission for
   // that section — this page is now reachable by any platform-staff role
@@ -138,6 +142,71 @@ export default function SuperAdminOverviewPage() {
             statLabel: "Queue",
             value: "Open",
             loading: false,
+          },
+        ]
+      : []),
+    ...(canAny(["verifications.view"])
+      ? [
+          {
+            title: "KYC Review",
+            description: "Cross-user identity verification submissions — status and history, read-only.",
+            to: "/superadmin/verifications",
+            icon: <TaskIcon className="size-6" />,
+            statLabel: "Queue",
+            value: "Review",
+            loading: false,
+          },
+        ]
+      : []),
+    ...(canAny(["vision-guard.consumer.view"])
+      ? [
+          {
+            title: "Personal Evidence",
+            description: "Cross-user consumer camera sources and uploaded evidence, read-only.",
+            to: "/superadmin/consumer-vision",
+            icon: <VideoIcon className="size-6" />,
+            statLabel: "Review",
+            value: "Live",
+            loading: false,
+          },
+        ]
+      : []),
+    ...(canAny(["roadrisk.view", "roadrisk.manage"])
+      ? [
+          {
+            title: "Road Risk",
+            description: "Curated road-segment safety scoring — real score/band/trend per corridor, editable.",
+            to: "/superadmin/road-risk",
+            icon: <MapPinIcon className="size-6" />,
+            statLabel: "Segments",
+            value: "Live",
+            loading: false,
+          },
+        ]
+      : []),
+    ...(canAny(["community.view", "community.manage"])
+      ? [
+          {
+            title: "Community",
+            description: "Crowdsourced community reports — likes, comments, anonymous reporting, moderation.",
+            to: "/superadmin/community",
+            icon: <AlertIcon className="size-6" />,
+            statLabel: "Queue",
+            value: "Live",
+            loading: false,
+          },
+        ]
+      : []),
+    ...(canOrganizations
+      ? [
+          {
+            title: "Organizations",
+            description: "Every organization on the platform — details, footprint, subscription, and a live map.",
+            to: "/superadmin/organizations",
+            icon: <GridIcon className="size-6" />,
+            statLabel: "Total organizations",
+            value: typeof organizationsTotal === "number" ? organizationsTotal : 0,
+            loading: organizations.isLoading,
           },
         ]
       : []),

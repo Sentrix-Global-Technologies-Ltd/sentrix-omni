@@ -18,6 +18,15 @@ export function supportTicketStatusTone(status: string): Tone {
   }
 }
 
+export function supportTicketSourceTone(source: string): Tone {
+  return source === "mobile" ? "primary" : "light";
+}
+
+export const SUPPORT_TICKET_SOURCE_OPTIONS: FilterOption[] = [
+  { value: "mobile", label: "Mobile app" },
+  { value: "dashboard", label: "Dashboard" },
+];
+
 export const SUPPORT_TICKET_STATUS_OPTIONS: FilterOption[] = [
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In progress" },

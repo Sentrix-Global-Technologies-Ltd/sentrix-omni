@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { retentionApi } from "../api/retention.api";
 
@@ -8,6 +8,17 @@ export function useStorage() {
     queryKey: ["retention", activeId ?? "none", "storage"],
     queryFn: () => retentionApi.storage(activeId as string),
     enabled: Boolean(activeId),
+  });
+}
+
+/** The Exports tab: append-only archive manifest history. */
+export function useRetentionExports(cursor?: string) {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: ["retention", activeId ?? "none", "exports", cursor ?? null],
+    queryFn: () => retentionApi.exports(activeId as string, cursor),
+    enabled: Boolean(activeId),
+    placeholderData: keepPreviousData,
   });
 }
 
