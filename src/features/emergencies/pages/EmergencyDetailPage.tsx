@@ -243,7 +243,14 @@ export default function EmergencyDetailPage() {
             {evidenceQuery.isLoading && (
               <p className="text-theme-sm text-gray-400">Loading…</p>
             )}
-            {!evidenceQuery.isLoading && evidence.length === 0 && (
+            {evidenceQuery.isError && (
+              <ErrorState
+                title="Couldn't load captured evidence"
+                error={evidenceQuery.error}
+                onRetry={() => void evidenceQuery.refetch()}
+              />
+            )}
+            {evidenceQuery.isSuccess && evidence.length === 0 && (
               <p className="text-theme-sm text-gray-400">
                 No audio, video, or photo evidence was captured for this SOS.
               </p>
