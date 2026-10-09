@@ -32,3 +32,19 @@ export interface EmergencyFilters {
   severity?: string;
   page?: number;
 }
+
+export type EmergencyEvidenceKind = "audio" | "video" | "photo" | "screenshot";
+
+/** Mirrors EmergencyEvidenceResource — audio/video/photo captured during a
+ *  consumer's SOS. Previously only ever readable by the consumer themselves
+ *  (me/emergencies/{id}/evidence); see emergenciesApi.evidence(). */
+export interface EmergencyEvidence {
+  id: string;
+  emergency_id: string;
+  kind: EmergencyEvidenceKind;
+  url: string;
+  content_type: string | null;
+  size_bytes: number | null;
+  duration_s: number | null;
+  created_at: string | null;
+}

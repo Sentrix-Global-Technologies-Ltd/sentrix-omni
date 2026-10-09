@@ -4,6 +4,7 @@ import { TrashBinIcon } from "../../../icons";
 import { feedStatusLabel, feedStatusTone, relativeTime } from "./feedStatusTone";
 import { cameraSourceTypeLabel } from "./cameraSourceTypeMeta";
 import type { CameraSource } from "../api/camera-feeds.types";
+import { useAuthenticatedImage } from "../../../hooks/useAuthenticatedImage";
 
 interface Props {
   sources: CameraSource[];
@@ -21,6 +22,18 @@ function healthTone(score: number | null): "success" | "warning" | "error" | "li
   return "error";
 }
 
+/** Row thumbnail of the source's private live frame (fetched with the bearer
+ * token; a render callback can't call hooks, hence a tiny component). */
+function FrameThumb({ source }: { source: CameraSource }) {
+  const { src } = useAuthenticatedImage(source.last_frame_url, source.last_frame_at);
+
+  return src ? (
+    <img src={src} alt="" className="h-full w-full object-cover" />
+  ) : (
+    <span className="text-theme-xs text-gray-400">—</span>
+  );
+}
+
 /** Rich Camera Sources table: type, site/zone, connection, health (derived
  * recency heuristic — see CameraSource::healthScore()), and admin tags. */
 export default function CameraSourcesTable({ sources, isLoading, error, onRetry, onRowClick, onDelete }: Props) {
@@ -31,11 +44,7 @@ export default function CameraSourcesTable({ sources, isLoading, error, onRetry,
       render: (s) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100 dark:bg-white/5">
-            {s.last_frame_url ? (
-              <img src={s.last_frame_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-theme-xs text-gray-400">—</span>
-            )}
+            <FrameThumb source={s} />
           </div>
           <div className="min-w-0">
             <p className="truncate font-medium text-gray-800 dark:text-white/90">{s.label}</p>

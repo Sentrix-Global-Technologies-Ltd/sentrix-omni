@@ -1,4 +1,5 @@
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
+import { useAuthenticatedImage } from "../../../hooks/useAuthenticatedImage";
 import { feedStatusLabel, feedStatusTone, relativeTime } from "./feedStatusTone";
 import type { CameraSource } from "../api/camera-feeds.types";
 
@@ -7,12 +8,11 @@ interface Props {
 }
 
 /** One camera tile: latest pushed snapshot (auto-refreshing via the parent's
- * poll), feed-status badge, and where it's mounted. Cache-busted by
- * last_frame_at so the <img> actually reloads when a fresher frame lands. */
+ * poll), feed-status badge, and where it's mounted. The frame is private: it
+ * is fetched with the bearer token (useAuthenticatedImage) and re-fetched
+ * whenever last_frame_at changes, i.e. when a fresher frame lands. */
 export default function CameraFeedCard({ source }: Props) {
-  const src = source.last_frame_url
-    ? `${source.last_frame_url}?t=${encodeURIComponent(source.last_frame_at ?? "")}`
-    : null;
+  const { src, status } = useAuthenticatedImage(source.last_frame_url, source.last_frame_at);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -20,7 +20,9 @@ export default function CameraFeedCard({ source }: Props) {
         {src ? (
           <img src={src} alt={source.label} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-theme-xs text-gray-400">No feed yet</span>
+          <span className="text-theme-xs text-gray-400">
+            {!source.last_frame_url ? "No feed yet" : status === "error" ? "Frame unavailable" : "Loading…"}
+          </span>
         )}
       </div>
       <div className="flex items-start justify-between gap-2 p-4">

@@ -13,6 +13,7 @@ import CreateIncidentButton from "../../incidents/components/CreateIncidentButto
 import { useEmergency } from "../hooks/useEmergency";
 import { useEmergenciesRealtime } from "../hooks/useEmergenciesRealtime";
 import { useEmergencyActions } from "../hooks/useEmergencyActions";
+import { useEmergencyEvidence } from "../hooks/useEmergencyEvidence";
 import {
   emergencyLabel,
   emergencySeverityTone,
@@ -20,10 +21,64 @@ import {
   formatDateTime,
   titleCase,
 } from "../components/emergencyTone";
-import type { Emergency } from "../api/emergencies.types";
+import type { Emergency, EmergencyEvidence } from "../api/emergencies.types";
 
 const card =
   "rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6";
+
+function formatBytes(bytes: number | null): string {
+  if (bytes == null) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) {
+    n /= 1024;
+    u += 1;
+  }
+  return `${n.toFixed(u === 0 ? 0 : 1)} ${units[u]}`;
+}
+
+function formatDuration(seconds: number | null): string | null {
+  if (seconds == null) return null;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+/** One captured evidence item — audio/video get an inline player (audio is
+ *  the common case for a covert/silent SOS), photo/screenshot an image,
+ *  anything else falls back to a plain download link. */
+function EvidenceItem({ item }: { item: EmergencyEvidence }) {
+  const isAudio = item.kind === "audio" || item.content_type?.startsWith("audio/");
+  const isVideo = item.kind === "video" || item.content_type?.startsWith("video/");
+  const isImage = item.kind === "photo" || item.kind === "screenshot" || item.content_type?.startsWith("image/");
+  const duration = formatDuration(item.duration_s);
+
+  return (
+    <div className="rounded-xl border border-gray-100 p-3 dark:border-gray-800">
+      <div className="flex items-center justify-between text-theme-xs text-gray-400">
+        <span className="font-medium uppercase tracking-wide text-gray-500 dark:text-gray-300">{item.kind}</span>
+        <span>{formatDateTime(item.created_at)}</span>
+      </div>
+
+      {isAudio && <audio src={item.url} controls className="mt-2 w-full" />}
+      {isVideo && <video src={item.url} controls className="mt-2 max-h-64 w-full rounded-lg" />}
+      {isImage && (
+        <img src={item.url} alt="SOS evidence" className="mt-2 max-h-64 w-full rounded-lg object-contain" />
+      )}
+      {!isAudio && !isVideo && !isImage && (
+        <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-theme-sm font-medium text-brand-500 hover:underline">
+          View file
+        </a>
+      )}
+
+      <div className="mt-2 flex gap-3 text-theme-xs text-gray-400">
+        {duration && <span>{duration}</span>}
+        <span>{formatBytes(item.size_bytes)}</span>
+      </div>
+    </div>
+  );
+}
 
 function lifecycle(e: Emergency): TimelineItem[] {
   const items: TimelineItem[] = [];
@@ -43,8 +98,10 @@ export default function EmergencyDetailPage() {
   const { connected } = useEmergenciesRealtime();
   const query = useEmergency(id);
   const actions = useEmergencyActions(id);
+  const evidenceQuery = useEmergencyEvidence(id);
   const [resolution, setResolution] = useState("");
   const emergency = query.data?.data;
+  const evidence = evidenceQuery.data?.data ?? [];
 
   const label = emergency ? emergencyLabel(emergency.message, emergency.id) : "Detail";
   const breadcrumbs = [
@@ -175,6 +232,29 @@ export default function EmergencyDetailPage() {
           <div className={card}>
             <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white/90">Lifecycle</h3>
             <Timeline items={lifecycle(emergency)} />
+          </div>
+        </div>
+
+        <div className="col-span-12">
+          <div className={card}>
+            <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white/90">
+              Captured evidence
+            </h3>
+            {evidenceQuery.isLoading && (
+              <p className="text-theme-sm text-gray-400">Loading…</p>
+            )}
+            {!evidenceQuery.isLoading && evidence.length === 0 && (
+              <p className="text-theme-sm text-gray-400">
+                No audio, video, or photo evidence was captured for this SOS.
+              </p>
+            )}
+            {evidence.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {evidence.map((item) => (
+                  <EvidenceItem key={item.id} item={item} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

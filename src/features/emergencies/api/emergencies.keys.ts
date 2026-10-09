@@ -7,4 +7,6 @@ export const emergencyKeys = {
     ["emergencies", orgId, "list", filters] as const,
   detail: (orgId: string, id: string) =>
     ["emergencies", orgId, "detail", id] as const,
+  evidence: (orgId: string, id: string) =>
+    ["emergencies", orgId, "evidence", id] as const,
 };

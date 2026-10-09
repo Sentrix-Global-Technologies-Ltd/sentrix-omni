@@ -1,6 +1,6 @@
 import { apiClient } from "../../../services/api/client";
 import type { ApiResult } from "../../../services/api/types";
-import type { Emergency, EmergencyFilters } from "./emergencies.types";
+import type { Emergency, EmergencyEvidence, EmergencyFilters } from "./emergencies.types";
 
 const base = (orgId: string) => `organizations/${orgId}/emergencies`;
 
@@ -31,5 +31,12 @@ export const emergenciesApi = {
   },
   cancel(orgId: string, id: string): Promise<ApiResult<Emergency>> {
     return apiClient.post<Emergency>(`${base(orgId)}/${id}/cancel`);
+  },
+
+  // Captured SOS audio/video/photo — was only ever reachable by the consumer
+  // themselves (me/emergencies/{id}/evidence); EmergencyController::evidence
+  // adds the same org-scoped, permission-gated read for staff.
+  evidence(orgId: string, id: string): Promise<ApiResult<EmergencyEvidence[]>> {
+    return apiClient.get<EmergencyEvidence[]>(`${base(orgId)}/${id}/evidence`);
   },
 };
