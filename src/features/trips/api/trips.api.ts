@@ -8,7 +8,7 @@ const base = (orgId: string) => `organizations/${orgId}/trips`;
 export const tripsApi = {
   list(orgId: string, filters: TripFilters): Promise<ApiResult<Trip[]>> {
     return apiClient.get<Trip[]>(base(orgId), {
-      query: { status: filters.status || undefined, page: filters.page },
+      query: { status: filters.status || undefined, page: filters.page, per_page: filters.per_page },
     });
   },
   detail(orgId: string, id: string): Promise<ApiResult<Trip>> {

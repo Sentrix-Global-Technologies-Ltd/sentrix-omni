@@ -56,6 +56,7 @@ export interface AssignmentFilters {
   status?: string;
   incident_id?: string;
   page?: number;
+  per_page?: number;
 }
 
 /** `POST assignments` payload (mirrors OpenAssignmentRequest). */

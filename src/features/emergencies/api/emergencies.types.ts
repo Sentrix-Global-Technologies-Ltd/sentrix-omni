@@ -31,6 +31,7 @@ export interface EmergencyFilters {
   status?: string;
   severity?: string;
   page?: number;
+  per_page?: number;
 }
 
 export type EmergencyEvidenceKind = "audio" | "video" | "photo" | "screenshot";

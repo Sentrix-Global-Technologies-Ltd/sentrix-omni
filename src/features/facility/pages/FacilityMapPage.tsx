@@ -1,171 +1,162 @@
 import { useState } from "react";
 import PageMeta from "../../../components/common/PageMeta";
-import PageHeader from "../../../components/shared/PageHeader";
+import Breadcrumb from "../../../components/shared/Breadcrumb";
 import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
-import LoadingState from "../../../components/ui/state/LoadingState";
-import ErrorState from "../../../components/ui/state/ErrorState";
-import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import { useToast } from "../../../components/shared/toast";
 import { useFacilityMap, useFacilityActions } from "../hooks/useFacilityMap";
-import FacilityMapCanvas from "../components/FacilityMapCanvas";
-import RecentZoneEvents from "../components/RecentZoneEvents";
 import AddBuildingModal from "../components/AddBuildingModal";
 import AddZoneModal from "../components/AddZoneModal";
-import type { FacilityBuilding, FacilityZone } from "../api/facility.types";
+import MapControlsPanel from "../components/MapControlsPanel";
+import FacilityMapCampus from "../components/FacilityMapCampus";
+import FacilityZoneEvents from "../components/FacilityZoneEvents";
+import SelectedLocationPanel from "../components/SelectedLocationPanel";
+import FacilityMapLegend from "../components/FacilityMapLegend";
+import type { FacilityBuilding } from "../api/facility.types";
+import type { LayerKey } from "../data/facilityMockData";
+import "../styles/facility-map.css";
 
-const card = "rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]";
-
-/**
- * Facility Map — a real-time view of the org's buildings, zones, and the
- * actual camera sources/detections matched to each (see FacilityMapController).
- * Selecting a building or zone shows its live camera roster in the side panel;
- * "Recent Zone Events" is pulled straight from detection_events.
- */
 export default function FacilityMapPage() {
+  /* ── real backend data ───────────────────────────────────────────── */
   const query = useFacilityMap();
-  const { deleteBuilding, deleteZone } = useFacilityActions();
+  const { deleteBuilding } = useFacilityActions();
   const toast = useToast();
 
+  /* ── modal state ─────────────────────────────────────────────────── */
   const [addBuildingOpen, setAddBuildingOpen] = useState(false);
   const [addZoneFor, setAddZoneFor] = useState<FacilityBuilding | null>(null);
+
+  /* ── map state ───────────────────────────────────────────────────── */
+  const [layers, setLayers] = useState<Record<LayerKey, boolean>>({
+    cameras: true,
+    zones: true,
+    alerts: true,
+    "access-points": true,
+    sensors: false,
+    perimeter: true,
+    "building-labels": true,
+  });
+  const [zoneFilter, setZoneFilter] = useState("all");
+  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
-  const [selectedZone, setSelectedZone] = useState<FacilityZone | null>(null);
 
-  const map = query.data?.data;
-  const buildings = map?.buildings ?? [];
-  const selectedBuilding = buildings.find((b) => b.id === selectedBuildingId) ?? null;
+  /* ── helpers ─────────────────────────────────────────────────────── */
+  const toggleLayer = (key: LayerKey) =>
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handleSelectZone = (buildingId: string, zone: FacilityZone) => {
-    setSelectedBuildingId(buildingId);
-    setSelectedZone(zone);
+  const handleSelectCamera = (id: string) => {
+    setSelectedCameraId(id);
+    setSelectedBuildingId(null);
   };
-
-  const handleSelectBuilding = (building: FacilityBuilding) => {
-    setSelectedBuildingId(building.id);
-    setSelectedZone(null);
-  };
-
-  const handleDeleteZone = async () => {
-    if (!selectedBuildingId || !selectedZone) return;
-    if (!window.confirm(`Remove zone "${selectedZone.name}"?`)) return;
-    try {
-      await deleteZone.mutateAsync({ buildingId: selectedBuildingId, zoneId: selectedZone.id });
-      setSelectedZone(null);
-      toast.success("Zone removed.");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not remove zone.");
-    }
+  const handleSelectBuilding = (id: string) => {
+    setSelectedBuildingId(id);
+    setSelectedCameraId(null);
   };
 
   const handleDeleteBuilding = async (building: FacilityBuilding) => {
     if (!window.confirm(`Remove "${building.name}" and all its zones?`)) return;
     try {
       await deleteBuilding.mutateAsync(building.id);
-      if (selectedBuildingId === building.id) {
-        setSelectedBuildingId(null);
-        setSelectedZone(null);
-      }
       toast.success(`${building.name} removed.`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not remove building.");
     }
   };
+  void handleDeleteBuilding;
 
   return (
     <>
-      <PageMeta title="Facility Map | Sentrix Console" description="Real-time view of your sites, cameras and zones" />
-      <PageHeader
-        title="Facility Map"
-        breadcrumbs={[{ label: "Vision Guard" }, { label: "Facility Map" }]}
-        actions={
+      <PageMeta
+        title="Facility Map | Sentrix Console"
+        description="Real-time view of your sites, cameras and zones"
+      />
+
+      {/* ── Page header ──────────────────────────────────────────────── */}
+      <div className="fm-custom-hd">
+        {/* Left: title + description */}
+        <div className="fm-custom-hd-left">
+          <h1 className="fm-custom-hd-title">Facility Map</h1>
+          <p className="fm-custom-hd-desc">
+            Real-time view of your sites, cameras, zones, and active alerts.
+          </p>
+        </div>
+
+        {/* Right: breadcrumb · All Sites · Add Building */}
+        <div className="fm-custom-hd-controls">
+          {/* Breadcrumb — Home > Vision Guard > Facility Map */}
+          <Breadcrumb
+            items={[
+              { label: "Vision Guard", to: "/vision-guard" },
+              { label: "Facility Map" },
+            ]}
+          />
+
+          {/* All Sites filter */}
+          <div className="fm-hd-filter-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="11" y1="18" x2="13" y2="18"/>
+            </svg>
+            <span>All Sites</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+
+          {/* Add Building */}
           <Can permission="hardware.register">
             <Button size="sm" variant="primary" onClick={() => setAddBuildingOpen(true)}>
               Add Building
             </Button>
           </Can>
-        }
-      />
 
-      {query.isLoading ? (
-        <LoadingState label="Loading facility map…" />
-      ) : query.error ? (
-        <ErrorState error={query.error} onRetry={() => void query.refetch()} />
-      ) : (
-        <div className="grid grid-cols-12 gap-4 md:gap-6">
-          <div className="col-span-12 xl:col-span-8">
-            <FacilityMapCanvas
-              buildings={buildings}
-              selectedZoneId={selectedZone?.id ?? null}
-              onSelectZone={handleSelectZone}
-              onSelectBuilding={handleSelectBuilding}
-            />
-
-            {selectedBuilding && (
-              <div className={`${card} mt-4`}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">{selectedBuilding.name}</h3>
-                  <Can permission="hardware.register">
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setAddZoneFor(selectedBuilding)}>
-                        Add zone
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => void handleDeleteBuilding(selectedBuilding)}>
-                        Remove building
-                      </Button>
-                    </div>
-                  </Can>
-                </div>
-
-                {selectedZone ? (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Zone: {selectedZone.name}</p>
-                      <Can permission="hardware.register">
-                        <button
-                          onClick={() => void handleDeleteZone()}
-                          className="text-theme-xs font-medium text-error-500 hover:underline"
-                        >
-                          Remove zone
-                        </button>
-                      </Can>
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      {selectedZone.cameras.length === 0 ? (
-                        <p className="text-theme-xs text-gray-400">No cameras registered in this zone yet.</p>
-                      ) : (
-                        selectedZone.cameras.map((cam) => (
-                          <div key={cam.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-800">
-                            <span className="text-sm text-gray-700 dark:text-gray-200">{cam.label}</span>
-                            <StatusBadge tone={cam.feed_status === "live" ? "success" : cam.feed_status === "offline" ? "error" : "light"}>
-                              {cam.feed_status}
-                            </StatusBadge>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-2 text-theme-xs text-gray-400">
-                    {selectedBuilding.zones.length} zone(s) · {selectedBuilding.unzoned_cameras_total} camera(s) not
-                    assigned to a drawn zone yet.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="col-span-12 xl:col-span-4">
-            <div className={card}>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Recent Zone Events</h3>
-              <div className="mt-3">
-                <RecentZoneEvents events={map?.recent_events ?? []} />
-              </div>
-            </div>
-          </div>
+          {/* Backend sync indicator */}
+          {query.isLoading && (
+            <span title="Syncing…" style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
+          )}
+          {query.error && (
+            <span title="Backend unavailable — showing mock data" style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
+          )}
         </div>
-      )}
+      </div>
 
+      {/* ── 3-column workspace ───────────────────────────────────────── */}
+      <div className="fm-workspace">
+        {/* Left: Map Controls */}
+        <MapControlsPanel
+          layers={layers}
+          onToggleLayer={toggleLayer}
+          zoneFilter={zoneFilter}
+          onZoneFilter={setZoneFilter}
+        />
+
+        {/* Centre: SVG Campus Map */}
+        <div style={{ minWidth: 0 }}>
+          <FacilityMapCampus
+            layers={layers}
+            zoneFilter={zoneFilter}
+            selectedCameraId={selectedCameraId}
+            selectedBuildingId={selectedBuildingId}
+            onSelectCamera={handleSelectCamera}
+            onSelectBuilding={handleSelectBuilding}
+          />
+        </div>
+
+        {/* Right: Events + Selected Location */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 }}>
+          <FacilityZoneEvents onSelectBuilding={handleSelectBuilding} />
+          <SelectedLocationPanel
+            selectedCameraId={selectedCameraId}
+            selectedBuildingId={selectedBuildingId}
+          />
+        </div>
+      </div>
+
+      {/* Legend */}
+      <FacilityMapLegend />
+
+      {/* Modals */}
       <AddBuildingModal open={addBuildingOpen} onClose={() => setAddBuildingOpen(false)} />
       <AddZoneModal
         open={addZoneFor !== null}

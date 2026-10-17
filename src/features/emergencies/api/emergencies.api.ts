@@ -12,6 +12,7 @@ export const emergenciesApi = {
         status: filters.status || undefined,
         severity: filters.severity || undefined,
         page: filters.page,
+        per_page: filters.per_page,
       },
     });
   },

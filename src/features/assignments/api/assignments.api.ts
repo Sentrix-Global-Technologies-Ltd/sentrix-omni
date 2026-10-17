@@ -18,6 +18,7 @@ export const assignmentsApi = {
         status: filters.status || undefined,
         incident_id: filters.incident_id || undefined,
         page: filters.page,
+        per_page: filters.per_page,
       },
     });
   },

@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import {
   BoltIcon,
-  BoxCubeIcon,
+  CameraIcon,
+  DownloadIcon,
   EyeIcon,
-  FolderIcon,
-  PageIcon,
+  GridIcon,
+  MapPinIcon,
   PlugInIcon,
+  ShieldCheckIcon,
   UserCircleIcon,
-  VideoIcon,
 } from "../../../icons";
 import type { OrgCameraSourceType } from "../api/camera-feeds.types";
 
@@ -23,21 +24,21 @@ export interface CameraSourceTypeMeta {
 const iconClass = "size-5";
 
 /** The 8 types offered by "Add Camera Source" — order and copy mirror the
- * reference design. Kept in one place so the modal and the table's type
+ * reference design. Kept in one place so the drawer and the table's type
  * badges never drift from each other. */
 export const CAMERA_SOURCE_TYPES: CameraSourceTypeMeta[] = [
   {
     value: "ip_camera",
     label: "IP Camera",
     description: "Add an IP camera via direct network connection.",
-    icon: <VideoIcon className={iconClass} />,
+    icon: <CameraIcon className={iconClass} />,
     requiresConnectionUrl: true,
   },
   {
     value: "cctv",
     label: "CCTV / Analog Camera",
     description: "Add a traditional CCTV or analog camera.",
-    icon: <BoxCubeIcon className={iconClass} />,
+    icon: <ShieldCheckIcon className={iconClass} />,
     requiresConnectionUrl: false,
   },
   {
@@ -72,14 +73,14 @@ export const CAMERA_SOURCE_TYPES: CameraSourceTypeMeta[] = [
     value: "upload",
     label: "Uploaded Video",
     description: "Upload video files for review and analysis.",
-    icon: <FolderIcon className={iconClass} />,
+    icon: <DownloadIcon className={iconClass} />,
     requiresConnectionUrl: false,
   },
   {
     value: "external_cctv",
     label: "External CCTV System",
     description: "Integrate with an external CCTV system.",
-    icon: <PageIcon className={iconClass} />,
+    icon: <GridIcon className={iconClass} />,
     requiresConnectionUrl: true,
   },
 ];
@@ -91,3 +92,28 @@ export function cameraSourceTypeMeta(type: string): CameraSourceTypeMeta | undef
 export function cameraSourceTypeLabel(type: string): string {
   return cameraSourceTypeMeta(type)?.label ?? type;
 }
+
+// --- Icon colour used inside the drawer picker (circle bg + icon fg) -------
+export type TypeTone = "teal" | "blue" | "purple" | "green" | "orange" | "dark-green" | "mid-blue" | "red";
+
+export const TYPE_TONE: Record<OrgCameraSourceType, TypeTone> = {
+  ip_camera:     "teal",
+  cctv:          "blue",
+  rtsp:          "purple",
+  phone:         "green",
+  dashcam:       "orange",
+  smart_glasses: "dark-green",
+  upload:        "mid-blue",
+  external_cctv: "red",
+};
+
+export const DOT_COLOR: Record<OrgCameraSourceType, string> = {
+  ip_camera:     "#0d9488", // teal-600
+  cctv:          "#2563eb", // blue-600
+  rtsp:          "#7c3aed", // violet-600
+  phone:         "#16a34a", // green-600
+  dashcam:       "#ea580c", // orange-600
+  smart_glasses: "#15803d", // green-700
+  upload:        "#1d4ed8", // blue-700
+  external_cctv: "#dc2626", // red-600
+};

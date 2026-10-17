@@ -1,21 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import FilterBar from "../../../components/shared/FilterBar";
-import FilterText from "../../../components/shared/FilterText";
-import FilterSelect from "../../../components/shared/FilterSelect";
-import StatCard from "../../../components/shared/StatCard";
 import Pagination from "../../../components/ui/pagination/Pagination";
 import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
 import { useToast } from "../../../components/shared/toast";
-import { VideoIcon, CheckCircleIcon, AlertIcon, TimeIcon } from "../../../icons";
 import { useCameraFeeds } from "../hooks/useCameraFeeds";
 import { useDeleteCameraSource } from "../hooks/useCameraSourceActions";
-import CameraSourcesTable from "../components/CameraSourcesTable";
-import AddCameraSourceModal from "../components/AddCameraSourceModal";
 import { CAMERA_SOURCE_TYPES } from "../components/cameraSourceTypeMeta";
+import CameraSourcesRichTable from "../components/CameraSourcesRichTable";
+import AddCameraSourceDrawer from "../components/AddCameraSourceDrawer";
+import CameraSourceKpiCard from "../components/CameraSourceKpiCard";
 import type { CameraSource } from "../api/camera-feeds.types";
+import "../styles/camera-sources.css";
 
 interface PaginatorMeta {
   current_page?: number;
@@ -25,21 +22,78 @@ interface PaginatorMeta {
   to?: number;
 }
 
+// ── Inline KPI icons ────────────────────────────────────────────────────────
+
+function IconCamera() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.89L15 14" />
+      <rect x="1" y="6" width="14" height="12" rx="2" ry="2" />
+    </svg>
+  );
+}
+
+function IconWifi() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.55a11 11 0 0114.08 0" />
+      <path d="M1.42 9a16 16 0 0121.16 0" />
+      <path d="M8.53 16.11a6 6 0 016.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
+function IconWifiOff() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <path d="M16.72 11.06A10.94 10.94 0 0119 12.55" />
+      <path d="M5 12.55a11 11 0 015.17-2.39" />
+      <path d="M10.71 5.05A16 16 0 0122.56 9" />
+      <path d="M1.42 9a15.91 15.91 0 014.7-2.88" />
+      <path d="M8.53 16.11a6 6 0 016.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
+function IconWrench() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+    </svg>
+  );
+}
+
 /**
- * Full Camera Sources console: every registered camera source across the
- * organization (bridge-discovered, org-admin-registered, or a consumer's
- * personal upload isn't included here — this is org-owned rows only), with
- * real filters, a health/connection view, and the "Add Camera Source" flow.
- * Distinct from Hardware's "Live Feeds" tab, which is the same data read-only
- * inside the broader Hardware console — this is the dedicated management
- * surface under the Vision Guard nav section.
+ * Camera Sources management console — dedicated page under Vision Guard nav.
  */
 export default function CameraSourcesPage() {
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
+  const [site, setSite] = useState("");
   const [page, setPage] = useState(1);
-  const [addOpen, setAddOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // ── Additional-filters popover ─────────────────────────────────────────────
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [filterHealthWarnings, setFilterHealthWarnings] = useState(false);
+  const [filterHasTags, setFilterHasTags] = useState(false);
+  const [filterFieldSources, setFilterFieldSources] = useState(false);
+  const filterBtnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterPopoverOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (filterBtnRef.current && !filterBtnRef.current.contains(e.target as Node)) {
+        setFilterPopoverOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [filterPopoverOpen]);
 
   const query = useCameraFeeds({ q, type, status, page });
   const del = useDeleteCameraSource();
@@ -50,8 +104,18 @@ export default function CameraSourcesPage() {
 
   const total = meta?.total ?? sources.length;
   const online = sources.filter((s) => s.feed_status === "live").length;
-  const offline = sources.filter((s) => s.feed_status === "offline" || s.feed_status === "no_feed").length;
   const stale = sources.filter((s) => s.feed_status === "stale").length;
+  const offline = sources.filter(
+    (s) => s.feed_status === "offline" || s.feed_status === "no_feed",
+  ).length;
+
+  const siteOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const s of sources) {
+      if (s.site) seen.add(s.site);
+    }
+    return Array.from(seen).map((v) => ({ value: v, label: v }));
+  }, [sources]);
 
   const handleDelete = async (source: CameraSource) => {
     if (!window.confirm(`Remove "${source.label}"? This cannot be undone.`)) return;
@@ -63,86 +127,152 @@ export default function CameraSourcesPage() {
     }
   };
 
+  const hasFilters = Boolean(q || type || status || site);
+  const hasAdditionalFilters = filterHealthWarnings || filterHasTags || filterFieldSources;
+
   return (
     <>
-      <PageMeta title="Camera Sources | Sentrix Console" description="Manage and monitor all camera sources" />
+      <PageMeta
+        title="Camera Sources | Sentrix Console"
+        description="Manage and monitor all camera sources"
+      />
+
       <PageHeader
         title="Camera Sources"
+        description="Manage and monitor every registered camera source across your organisation."
         breadcrumbs={[{ label: "Vision Guard" }, { label: "Camera Sources" }]}
         actions={
           <Can permission="bridges.manage">
-            <Button size="sm" variant="primary" onClick={() => setAddOpen(true)}>
-              Add Camera Source
+            <Button size="sm" variant="primary" onClick={() => setDrawerOpen(true)}>
+              + Add Camera Source
             </Button>
           </Can>
         }
       />
 
-      <div className="mb-6 grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Total Sources" tone="info" icon={<VideoIcon className="size-6" />} value={total} />
-        </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Online" tone="success" icon={<CheckCircleIcon className="size-6" />} value={online} />
-        </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Stale" tone="warning" icon={<TimeIcon className="size-6" />} value={stale} />
-        </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Offline" tone="error" icon={<AlertIcon className="size-6" />} value={offline} />
-        </div>
+      {/* KPI row */}
+      <div className="cs-kpi-grid mb-6">
+        <CameraSourceKpiCard label="Total Sources" value={total} tone="teal" icon={<IconCamera />} loading={query.isLoading} />
+        <CameraSourceKpiCard label="Online" value={online} tone="green" icon={<IconWifi />} loading={query.isLoading} />
+        <CameraSourceKpiCard label="Offline" value={offline} tone="orange" icon={<IconWifiOff />} loading={query.isLoading} />
+        <CameraSourceKpiCard label="Maintenance" value={stale} tone="gray" icon={<IconWrench />} loading={query.isLoading} />
       </div>
 
-      <FilterBar
-        trailing={
-          (q || type || status) && (
-            <button
-              onClick={() => {
-                setQ("");
-                setType("");
-                setStatus("");
-                setPage(1);
-              }}
-              className="text-theme-sm font-medium text-brand-500 hover:underline"
-            >
-              Clear filters
-            </button>
-          )
-        }
-      >
-        <FilterText
-          label="Search"
-          value={q}
-          placeholder="Search sources…"
-          onChange={(v) => {
-            setQ(v);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
-          label="Source Type"
-          value={type}
-          options={CAMERA_SOURCE_TYPES.map((t) => ({ value: t.value, label: t.label }))}
-          onChange={(v) => {
-            setType(v);
-            setPage(1);
-          }}
-        />
-        <FilterSelect
-          label="Status"
-          value={status}
-          options={[
-            { value: "active", label: "Active" },
-            { value: "inactive", label: "Inactive" },
-          ]}
-          onChange={(v) => {
-            setStatus(v);
-            setPage(1);
-          }}
-        />
-      </FilterBar>
+      {/* Filter row */}
+      <div className="cs-filter-row">
+        {/* Search */}
+        <div className="cs-filter-search">
+          <span className="cs-filter-search-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            placeholder="Search sources…"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+          />
+        </div>
 
-      <CameraSourcesTable
+        {/* Source Type */}
+        <select className="cs-filter-select" value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}>
+          <option value="">All Types</option>
+          {CAMERA_SOURCE_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
+        </select>
+
+        {/* Status */}
+        <select className="cs-filter-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        {/* Site */}
+        {siteOptions.length > 0 && (
+          <select className="cs-filter-select" value={site} onChange={(e) => { setSite(e.target.value); setPage(1); }}>
+            <option value="">All Sites</option>
+            {siteOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Filters button + popover */}
+        <div ref={filterBtnRef} style={{ position: "relative", flex: "0 0 auto" }}>
+          <button
+            type="button"
+            className="cs-filter-btn"
+            onClick={() => setFilterPopoverOpen((v) => !v)}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            Filters
+            {hasAdditionalFilters && <span className="cs-filter-btn-dot" />}
+          </button>
+
+          {filterPopoverOpen && (
+            <div className="cs-filter-popover">
+              <p className="cs-filter-popover-title">Additional filters</p>
+
+              <label className="cs-filter-popover-row">
+                <input
+                  type="checkbox"
+                  checked={filterHealthWarnings}
+                  onChange={(e) => setFilterHealthWarnings(e.target.checked)}
+                  className="cs-filter-popover-check"
+                />
+                Has health warnings
+              </label>
+
+              <label className="cs-filter-popover-row">
+                <input
+                  type="checkbox"
+                  checked={filterHasTags}
+                  onChange={(e) => setFilterHasTags(e.target.checked)}
+                  className="cs-filter-popover-check"
+                />
+                Has tags
+              </label>
+
+              <label className="cs-filter-popover-row">
+                <input
+                  type="checkbox"
+                  checked={filterFieldSources}
+                  onChange={(e) => setFilterFieldSources(e.target.checked)}
+                  className="cs-filter-popover-check"
+                />
+                Field sources
+              </label>
+
+              <button
+                type="button"
+                className="cs-filter-popover-apply"
+                onClick={() => setFilterPopoverOpen(false)}
+              >
+                Apply filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Clear link */}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => { setQ(""); setType(""); setStatus(""); setSite(""); setPage(1); }}
+            className="text-theme-sm font-medium text-brand-500 hover:underline whitespace-nowrap"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Rich table */}
+      <CameraSourcesRichTable
         sources={sources}
         isLoading={query.isLoading}
         error={query.error}
@@ -161,7 +291,7 @@ export default function CameraSourcesPage() {
         />
       )}
 
-      <AddCameraSourceModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <AddCameraSourceDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );
 }

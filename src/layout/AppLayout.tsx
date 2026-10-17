@@ -12,7 +12,7 @@ const LayoutContent: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen xl:flex">
+    <div className="min-h-screen lg:flex">
       <div>
         <AppSidebar />
         <Backdrop />

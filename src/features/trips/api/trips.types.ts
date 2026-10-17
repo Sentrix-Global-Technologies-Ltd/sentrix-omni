@@ -25,6 +25,7 @@ export interface Trip {
 export interface TripFilters {
   status?: string;
   page?: number;
+  per_page?: number;
 }
 
 /** `POST organizations/{org}/trips` payload (mirrors StartTripRequest). */

@@ -124,3 +124,10 @@ export interface UpdateIncidentInput {
   summary?: string;
   assigned_to?: string | null;
 }
+
+/** Extended filter set used by the Incidents Centre list page.
+ *  Adds per_page so KPI count queries can request page=1&per_page=1
+ *  to retrieve meta.total cheaply without loading all records. */
+export interface IncidentCentreFilters extends IncidentFilters {
+  per_page?: number;
+}

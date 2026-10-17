@@ -1,8 +1,9 @@
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import Pagination from "../../../components/ui/pagination/Pagination";
-import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator";
+import ListToolbar from "../../../components/shared/ListToolbar";
+import ListPagination from "../../../components/shared/ListPagination";
 import ResponderFilters from "../components/ResponderFilters";
 import ResponderTable from "../components/ResponderTable";
 import RegisterResponderButton from "../components/RegisterResponderButton";
@@ -18,37 +19,59 @@ interface PaginatorMeta {
   to?: number;
 }
 
+const DEFAULT_PAGE_SIZE = 25;
+
 export default function ResponderListPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
 
   const filters: Filters = {
-    status: params.get("status") ?? undefined,
+    status:     params.get("status")     ?? undefined,
     assignable: params.get("assignable") ?? undefined,
-    page: params.get("page") ? Number(params.get("page")) : undefined,
+    page:       params.get("page")       ? Number(params.get("page")) : undefined,
+    perPage:    params.get("per_page")   ? Number(params.get("per_page")) : DEFAULT_PAGE_SIZE,
   };
 
   const { connected } = useRespondersRealtime();
   const query = useResponders(filters);
 
-  const updateFilters = (next: Partial<Filters>) => {
-    const merged = { ...filters, ...next };
-    const sp = new URLSearchParams();
-    if (merged.status) sp.set("status", merged.status);
-    if (merged.assignable) sp.set("assignable", merged.assignable);
-    setParams(sp);
-  };
-
-  const clear = () => setParams(new URLSearchParams());
-
-  const setPage = (page: number) => {
-    const sp = new URLSearchParams(params);
-    sp.set("page", String(page));
-    setParams(sp);
-  };
-
   const responders = query.data?.data ?? [];
   const meta = query.data?.meta as PaginatorMeta | undefined;
+
+  // ── Client-side search over current page ──────────────────────────────────
+  const [search, setSearch] = useState("");
+  const visible = useMemo<Responder[]>(() => {
+    if (!search.trim()) return responders;
+    const q = search.toLowerCase();
+    return responders.filter(
+      (r) =>
+        (r.user_name ?? "").toLowerCase().includes(q) ||
+        (r.user_email ?? "").toLowerCase().includes(q) ||
+        r.id.toLowerCase().includes(q),
+    );
+  }, [responders, search]);
+
+  // ── Filter / page helpers ─────────────────────────────────────────────────
+  const updateFilters = useCallback((next: Partial<Filters>) => {
+    setSearch("");
+    const merged = { ...filters, ...next };
+    const sp = new URLSearchParams();
+    if (merged.status)     sp.set("status",     merged.status);
+    if (merged.assignable) sp.set("assignable", merged.assignable);
+    if (merged.perPage && merged.perPage !== DEFAULT_PAGE_SIZE)
+      sp.set("per_page", String(merged.perPage));
+    if (next.page !== undefined) sp.set("page", String(next.page));
+    setParams(sp);
+  }, [filters, setParams]);
+
+  const clear = useCallback(() => { setSearch(""); setParams(new URLSearchParams()); }, [setParams]);
+
+  const setPage = useCallback((page: number) => updateFilters({ page }), [updateFilters]);
+
+  const setPageSize = useCallback(
+    (size: number) => updateFilters({ perPage: size, page: undefined }),
+    [updateFilters],
+  );
 
   return (
     <>
@@ -56,34 +79,45 @@ export default function ResponderListPage() {
       <PageHeader
         title="Responders"
         breadcrumbs={[{ label: "Responders" }]}
-        actions={
-          <div className="flex items-center gap-2">
-            <RealtimeIndicator connected={connected} />
-            <RegisterResponderButton />
-          </div>
-        }
+        actions={<RegisterResponderButton />}
       />
 
-      <ResponderFilters filters={filters} onChange={updateFilters} onClear={clear} />
+      <div className="flex flex-col gap-4 pb-6">
+        <ResponderFilters filters={filters} onChange={updateFilters} onClear={clear} />
 
-      <ResponderTable
-        responders={responders}
-        isLoading={query.isLoading}
-        error={query.error}
-        onRetry={() => void query.refetch()}
-        onRowClick={(r: Responder) => navigate(`/responders/${r.id}`)}
-      />
-
-      {meta && (
-        <Pagination
-          currentPage={meta.current_page ?? 1}
-          lastPage={meta.last_page ?? 1}
-          total={meta.total}
-          from={meta.from}
-          to={meta.to}
-          onPageChange={setPage}
+        <ListToolbar
+          search={search}
+          onSearch={setSearch}
+          visibleCount={visible.length}
+          totalCount={meta?.total ?? null}
+          isLoading={query.isLoading}
+          pageSize={filters.perPage ?? DEFAULT_PAGE_SIZE}
+          onPageSizeChange={setPageSize}
+          onRefresh={() => void query.refetch()}
+          connected={connected}
+          placeholder="Search responders…"
+          refreshLabel="Refresh responders"
         />
-      )}
+
+        <ResponderTable
+          responders={visible}
+          isLoading={query.isLoading}
+          error={query.error}
+          onRetry={() => void query.refetch()}
+          onRowClick={(r: Responder) => navigate(`/responders/${r.id}`)}
+        />
+
+        {meta && !query.isLoading && (
+          <ListPagination
+            currentPage={meta.current_page ?? 1}
+            lastPage={meta.last_page ?? 1}
+            total={meta.total}
+            from={meta.from}
+            to={meta.to}
+            onPageChange={setPage}
+          />
+        )}
+      </div>
     </>
   );
 }

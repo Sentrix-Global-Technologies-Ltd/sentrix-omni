@@ -5,7 +5,7 @@ import PageHeader from "../../../components/shared/PageHeader";
 import FilterBar from "../../../components/shared/FilterBar";
 import FilterText from "../../../components/shared/FilterText";
 import Pagination from "../../../components/ui/pagination/Pagination";
-import StatCard from "../../../components/shared/StatCard";
+import DashboardKpiCard from "../../dashboard/components/DashboardKpiCard";
 import MapView, { type MapMarker } from "../../../components/shared/MapView";
 import OrganizationsTable from "../components/OrganizationsTable";
 import { usePlatformOrganizations } from "../hooks/usePlatformOrganizations";
@@ -82,16 +82,16 @@ export default function OrganizationsDirectoryPage() {
 
       <div className="mb-6 grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Total Sites" tone="info" icon={<GroupIcon className="size-6" />} value={meta?.total ?? organizations.length} />
+          <DashboardKpiCard label="Total Sites" tone="info" icon={<GroupIcon className="size-6" />} value={meta?.total ?? organizations.length} />
         </div>
         <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Total Cameras" tone="light" icon={<VideoIcon className="size-6" />} value={totalCameras} />
+          <DashboardKpiCard label="Total Cameras" tone="light" icon={<VideoIcon className="size-6" />} value={totalCameras} />
         </div>
         <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Cameras Online" tone="success" icon={<CheckCircleIcon className="size-6" />} value={onlineCameras} />
+          <DashboardKpiCard label="Cameras Online" tone="success" icon={<CheckCircleIcon className="size-6" />} value={onlineCameras} />
         </div>
         <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard label="Open Incidents" tone="error" icon={<AlertHexaIcon className="size-6" />} value={openIncidents} />
+          <DashboardKpiCard label="Open Incidents" tone="error" icon={<AlertHexaIcon className="size-6" />} value={openIncidents} />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import type { ApiResult } from "../../../services/api/types";
 import type {
   CreateIncidentInput,
   Incident,
+  IncidentCentreFilters,
   IncidentDetail,
   IncidentFilters,
   TimelineEntry,
@@ -13,12 +14,16 @@ const base = (orgId: string) => `organizations/${orgId}/incidents`;
 
 /** Endpoint module — thin, typed wrapper over the API client. No logic. */
 export const incidentsApi = {
-  list(orgId: string, filters: IncidentFilters): Promise<ApiResult<Incident[]>> {
+  list(
+    orgId: string,
+    filters: IncidentFilters | IncidentCentreFilters,
+  ): Promise<ApiResult<Incident[]>> {
     return apiClient.get<Incident[]>(base(orgId), {
       query: {
         status: filters.status || undefined,
         severity: filters.severity || undefined,
         page: filters.page,
+        per_page: (filters as IncidentCentreFilters).per_page,
       },
     });
   },

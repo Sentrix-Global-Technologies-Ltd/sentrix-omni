@@ -42,7 +42,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-gray-900 border-gray-700 text-gray-300 h-screen transition-all duration-300 ease-in-out z-50 border-r
         ${expanded ? "w-[290px]" : "w-[90px]"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -54,7 +54,7 @@ const AppSidebar: React.FC = () => {
         className={`py-8 flex ${!expanded ? "lg:justify-center" : "justify-start"}`}
       >
         <Link to="/" aria-label="Sentrix home">
-          <Logo iconOnly={!expanded} />
+          <Logo iconOnly={!expanded} className="[&>span:last-child]:!text-white" />
         </Link>
       </div>
 
@@ -79,15 +79,15 @@ const AppSidebar: React.FC = () => {
                         to={item.path}
                         className={`menu-item group ${
                           isActive(item.path)
-                            ? "menu-item-active"
-                            : "menu-item-inactive"
+                            ? "bg-blue-light-500/[0.12] text-blue-light-400"
+                            : "text-gray-400 hover:bg-white/[0.06] hover:text-white"
                         } ${!expanded ? "lg:justify-center" : "lg:justify-start"}`}
                       >
                         <span
                           className={`menu-item-icon-size ${
                             isActive(item.path)
-                              ? "menu-item-icon-active"
-                              : "menu-item-icon-inactive"
+                              ? "text-blue-light-400"
+                              : "text-gray-400 group-hover:text-white"
                           }`}
                         >
                           {item.icon}

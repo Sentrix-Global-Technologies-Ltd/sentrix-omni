@@ -56,8 +56,16 @@ import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
 import { ReactComponent as MapPinIcon } from "./map-pin.svg?react";
 
+import { ReactComponent as ShieldCheckIcon } from "./shield-check.svg?react";
+import { ReactComponent as CameraIcon } from "./camera.svg?react";
+import { ReactComponent as MapIcon } from "./map-icon.svg?react";
+import { ReactComponent as ChartAltIcon } from "./chart-alt.svg?react";
 export {
   MapPinIcon,
+  ShieldCheckIcon,
+  CameraIcon,
+  MapIcon,
+  ChartAltIcon,
   ErrorHexaIcon,
   AlertHexaIcon,
   MoreDotIcon,
