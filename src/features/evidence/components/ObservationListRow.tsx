@@ -38,6 +38,7 @@ export default function ObservationListRow({ observation: o, selected, onClick }
       }}
       aria-pressed={selected}
     >
+      {/* ── Desktop layout (6-column grid) — hidden on mobile via .ev-list-row-top */}
       {/* Thumbnail */}
       <div className="ev-list-thumb">
         {o.snapshot_url ? (
@@ -54,7 +55,7 @@ export default function ObservationListRow({ observation: o, selected, onClick }
       </div>
 
       {/* Kind */}
-      <span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+      <span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 ev-list-col-kind">
         {titleCase(o.kind)}
       </span>
 
@@ -68,13 +69,13 @@ export default function ObservationListRow({ observation: o, selected, onClick }
       </div>
 
       {/* Time */}
-      <span className="ev-card-time">
+      <span className="ev-card-time ev-list-col-time">
         <TimeIcon className="size-3 opacity-60" />
         {o.observed_at ? relativeTime(o.observed_at) : "—"}
       </span>
 
       {/* Flags */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ev-list-col-flags">
         {o.hold && (
           <span className="ev-flag hold" title="Legal hold">
             <LockIcon className="size-3" />
@@ -91,6 +92,48 @@ export default function ObservationListRow({ observation: o, selected, onClick }
           <span className="text-[9px] font-semibold text-purple-500 dark:text-purple-400">
             SEALED
           </span>
+        )}
+      </div>
+
+      {/* ── Mobile card rows (visible only on narrow screens via CSS) ── */}
+      <div className="ev-list-row-top">
+        <div className="ev-list-thumb">
+          {o.snapshot_url ? (
+            <img src={o.snapshot_url} alt={label} loading="lazy" />
+          ) : (
+            <FileIcon className="size-4 opacity-40" />
+          )}
+        </div>
+        <div className="ev-list-name">
+          <strong>{label}</strong>
+          <small>{sub}</small>
+        </div>
+      </div>
+      <div className="ev-list-row-bottom">
+        <span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+          {titleCase(o.kind)}
+        </span>
+        {o.severity && (
+          <span className={severityClass(o.severity)}>{o.severity}</span>
+        )}
+        <span className="ev-card-time">
+          <TimeIcon className="size-3 opacity-60" />
+          {o.observed_at ? relativeTime(o.observed_at) : "—"}
+        </span>
+        {o.hold && (
+          <span className="ev-flag hold" title="Legal hold">
+            <LockIcon className="size-3" />
+          </span>
+        )}
+        {o.bookmarked && (
+          <span className="ev-flag bookmarked" title="Bookmarked">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </span>
+        )}
+        {o.sealed && (
+          <span className="text-[9px] font-semibold text-purple-500 dark:text-purple-400">SEALED</span>
         )}
       </div>
     </div>

@@ -1,8 +1,13 @@
+import { useState, useRef, useEffect } from "react";
 import { CloseIcon, FileIcon } from "../../../icons";
 import { relativeTime, titleCase, formatDateTime } from "./evidenceTone";
 import ObservationActions from "./ObservationActions";
 import { useAuditLogs } from "../../audit/hooks/useAuditLogs";
-import type { Observation } from "../api/evidence.types";
+import { useEvidenceCollections } from "../hooks/useEvidence";
+import { useEvidenceCollectionActions } from "../hooks/useEvidenceActions";
+import { useToast } from "../../../components/shared/toast";
+import { ApiError } from "../../../services/api/errors";
+import type { Observation, EvidenceCollection } from "../api/evidence.types";
 import Can from "../../../components/shared/Can";
 import "../styles/evidence-console.css";
 
@@ -68,7 +73,7 @@ function CustodyIcon({ type }: { type?: string }) {
 /* ── Empty placeholder ───────────────────────────────────────────── */
 function EmptyDrawer() {
   return (
-    <aside className="ev-drawer">
+    <aside className="ev-drawer ev-drawer--empty" aria-label="Evidence Details">
       <div className="ev-drawer-header">
         <h2>Evidence Details</h2>
       </div>
@@ -82,6 +87,26 @@ function EmptyDrawer() {
 }
 
 export default function ObservationDetailsDrawer({ observation: o, onClose, onViewCustody }: Props) {
+  const [showExport, setShowExport] = useState(false);
+  const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const exportRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
+  const collectionsQuery = useEvidenceCollections(1);
+  const { addObservations } = useEvidenceCollectionActions();
+
+  // Close export panel on outside click
+  useEffect(() => {
+    if (!showExport) return;
+    function handler(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExport(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showExport]);
+
   const logs = useAuditLogs({
     subject_type: "observation",
     subject_id: o?.id,
@@ -135,7 +160,7 @@ export default function ObservationDetailsDrawer({ observation: o, onClose, onVi
     : titleCase(o.retention_tier);
 
   return (
-    <aside className="ev-drawer">
+    <aside className="ev-drawer" aria-label="Evidence Details">
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="ev-drawer-header">
         <h2>Evidence Details</h2>
@@ -201,7 +226,7 @@ export default function ObservationDetailsDrawer({ observation: o, onClose, onVi
                   </svg>
                 </a>
               )}
-              <button className="ev-drawer-icon-btn" title="Share" onClick={() => onViewCustody(o)}>
+              <button className="ev-drawer-icon-btn" title="Chain of custody" onClick={() => onViewCustody(o)}>
                 {/* Share icon */}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="18" cy="5" r="3" />
@@ -269,7 +294,19 @@ export default function ObservationDetailsDrawer({ observation: o, onClose, onVi
           {/* ── ObservationActions (hold / bookmark) ─────────────── */}
           <Can permission="evidence.view">
             <div className="py-3 border-b border-gray-100 dark:border-gray-700">
-              <ObservationActions observation={o} onViewCustody={onViewCustody} />
+              {isDemo ? (
+                /*
+                 * Demo records cannot be actioned — the hold/bookmark API
+                 * endpoints reject demo-prefixed IDs. Show a clear notice
+                 * instead of disabled buttons so the user understands why
+                 * the actions are absent.
+                 */
+                <p className="text-xs text-right" style={{ color: "#9ca3af" }}>
+                  Actions unavailable for demo records.
+                </p>
+              ) : (
+                <ObservationActions observation={o} onViewCustody={onViewCustody} />
+              )}
             </div>
           </Can>
 
@@ -307,11 +344,147 @@ export default function ObservationDetailsDrawer({ observation: o, onClose, onVi
         </div>
       </div>
 
-      {/* ── Footer: export button ──────────────────────────────────── */}
-      <div className="ev-drawer-footer">
-        <button className="ev-export-btn">
+      {/* ── Footer: export / share panel ───────────────────────────── */}
+      <div className="ev-drawer-footer" ref={exportRef}>
+        {showExport && o && (
+          <div className="ev-export-sheet">
+            {/* Download snapshot */}
+            {(o.snapshot_url && o.snapshot_url !== "#demo") && (
+              <a
+                href={o.snapshot_url}
+                download
+                className="ev-export-sheet-item"
+                onClick={() => setShowExport(false)}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download Snapshot
+              </a>
+            )}
+            {/* Download clip */}
+            {(o.clip_url && o.clip_url !== "#demo") && (
+              <a
+                href={o.clip_url}
+                download
+                className="ev-export-sheet-item"
+                onClick={() => setShowExport(false)}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="23 7 16 7 12 3 8 7 1 7 1 17 23 17 23 7" />
+                  <polyline points="7 10 12 15 17 10" />
+                </svg>
+                Download Clip
+              </a>
+            )}
+            {/* Copy evidence ID */}
+            <button
+              className="ev-export-sheet-item"
+              onClick={() => {
+                void navigator.clipboard.writeText(o.id).then(() => {
+                  toast.success("Evidence ID copied.");
+                  setShowExport(false);
+                });
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy Evidence ID
+            </button>
+            {/* Add to collection — disabled for demo observations */}
+            {!isDemo ? (
+              <button
+                className="ev-export-sheet-item"
+                onClick={() => {
+                  setShowCollectionPicker((v) => !v);
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                  <line x1="12" y1="11" x2="12" y2="17" />
+                  <line x1="9" y1="14" x2="15" y2="14" />
+                </svg>
+                Add to Collection
+              </button>
+            ) : (
+              <span className="ev-export-sheet-item ev-export-sheet-item--disabled">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                Add to Collection (unavailable for demo)
+              </span>
+            )}
+            {/* Inline collection picker */}
+            {showCollectionPicker && !isDemo && (
+              <div className="ev-collection-picker">
+                <input
+                  type="text"
+                  placeholder="Search collections…"
+                  value={collectionSearch}
+                  onChange={(e) => setCollectionSearch(e.target.value)}
+                  className="ev-collection-picker-input"
+                  autoFocus
+                />
+                <div className="ev-collection-picker-list">
+                  {collectionsQuery.isLoading && (
+                    <span className="ev-collection-picker-empty">Loading…</span>
+                  )}
+                  {!collectionsQuery.isLoading && (collectionsQuery.data?.data ?? []).length === 0 && (
+                    <span className="ev-collection-picker-empty">No collections yet.</span>
+                  )}
+                  {(collectionsQuery.data?.data ?? [])
+                    .filter((c: EvidenceCollection) =>
+                      !collectionSearch ||
+                      c.name.toLowerCase().includes(collectionSearch.toLowerCase())
+                    )
+                    .map((c: EvidenceCollection) => (
+                      <button
+                        key={c.id}
+                        className="ev-collection-picker-item"
+                        onClick={async () => {
+                          try {
+                            await addObservations.mutateAsync({
+                              id: c.id,
+                              observationIds: [o.id],
+                            });
+                            toast.success(`Added to "${c.name}".`);
+                            setShowCollectionPicker(false);
+                            setShowExport(false);
+                          } catch (err) {
+                            toast.error(
+                              err instanceof ApiError ? err.message : "Could not add to collection."
+                            );
+                          }
+                        }}
+                      >
+                        {c.name}
+                        {c.observations_count != null && (
+                          <span className="ev-collection-picker-count">{c.observations_count}</span>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          className={`ev-export-btn${showExport ? " active" : ""}`}
+          onClick={() => {
+            setShowExport((v) => !v);
+            if (showExport) setShowCollectionPicker(false);
+          }}
+        >
           Export / Share Evidence
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: showExport ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+          >
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>

@@ -1,8 +1,8 @@
 import Can from "../../../components/shared/Can";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
-import StatCard from "../../../components/shared/StatCard";
 import { BoxIconLine, CheckCircleIcon, LockIcon, TrashBinIcon } from "../../../icons";
 import { useRetentionActions, useStorage } from "../../retention/hooks/useRetention";
+import "../../incidents/styles/incidents-centre.css";
 
 function formatBytes(n: number): string {
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -29,45 +29,68 @@ export default function RetentionPolicyPanel() {
   const { sweep, archive, purge } = useRetentionActions();
   const s = storage.data?.data;
 
+  const loading = storage.isLoading;
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Storage used"
-            tone="info"
-            icon={<BoxIconLine className="size-6" />}
-            loading={storage.isLoading}
-            value={s ? `${formatBytes(s.estimated_bytes)} (${s.pct_of_quota.toFixed(1)}%)` : "—"}
-          />
+
+      {/* ── KPI cards — styled to match Incidents Centre stat cards ── */}
+      <div className="ic-kpi-grid">
+
+        {/* Storage used */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Storage used</span>
+          {loading ? (
+            <span className="ic-stat-skeleton" aria-hidden="true" />
+          ) : (
+            <span className="ic-stat-value" style={{ fontSize: "1.4rem" }}>
+              {s ? formatBytes(s.estimated_bytes) : "—"}
+            </span>
+          )}
+          {s && (
+            <span className="ic-stat-sub">{s.pct_of_quota.toFixed(1)}% of quota</span>
+          )}
+          <span className="ic-stat-accent ic-stat-accent--info" />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="On legal hold"
-            tone="error"
-            icon={<LockIcon className="size-6" />}
-            loading={storage.isLoading}
-            value={s?.on_legal_hold ?? 0}
-          />
+
+        {/* On legal hold */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">On legal hold</span>
+          {loading ? (
+            <span className="ic-stat-skeleton" aria-hidden="true" />
+          ) : (
+            <span className="ic-stat-value">{s?.on_legal_hold ?? 0}</span>
+          )}
+          <span className="ic-stat-sub">Evidence items</span>
+          <span className="ic-stat-accent ic-stat-accent--critical" />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Archived"
-            tone="warning"
-            icon={<TrashBinIcon className="size-6" />}
-            loading={storage.isLoading}
-            value={s?.archived ?? 0}
-          />
+
+        {/* Archived */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Archived</span>
+          {loading ? (
+            <span className="ic-stat-skeleton" aria-hidden="true" />
+          ) : (
+            <span className="ic-stat-value">{s?.archived ?? 0}</span>
+          )}
+          <span className="ic-stat-sub">Evidence items</span>
+          <span className="ic-stat-accent ic-stat-accent--warning" />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Plan"
-            tone="success"
-            icon={<CheckCircleIcon className="size-6" />}
-            loading={storage.isLoading}
-            value={s?.plan ?? "—"}
-          />
+
+        {/* Plan */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Plan</span>
+          {loading ? (
+            <span className="ic-stat-skeleton" aria-hidden="true" />
+          ) : (
+            <span className="ic-stat-value" style={{ fontSize: "1.4rem", textTransform: "capitalize" }}>
+              {s?.plan ?? "—"}
+            </span>
+          )}
+          <span className="ic-stat-sub">Current subscription</span>
+          <span className="ic-stat-accent ic-stat-accent--success" />
         </div>
+
       </div>
 
       <div className={card}>

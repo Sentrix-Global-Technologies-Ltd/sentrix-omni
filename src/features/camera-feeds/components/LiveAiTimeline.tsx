@@ -1,41 +1,128 @@
 /**
- * LiveAiTimeline — horizontal time-axis AI detection timeline
- * MOCK / SIMULATED data only — no real AI events
+ * LiveAiTimeline — horizontal AI detection timeline.
+ *
+ * Data source: GET /api/v1/organizations/{org}/detections/recent
+ *              (useRecentDetections, polling every 30 s — no push stream exists)
+ * Camera scope: optional cameraSourceId prop restricts to one camera.
+ *
+ * Timeline window: 7 × 5-minute buckets ending at the current 5-minute boundary.
+ * Data coverage: up to 50 most-recent detections per query (backend MAX_LIMIT).
+ * Bucket counts reflect only events within those 50 records; they do not
+ * represent a complete count of all detections that occurred in that window.
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRecentDetections } from "../hooks/useRecentDetections";
+import { classifyDetection } from "./detectionClassifier";
+import type { DetectionCategory } from "./detectionClassifier";
+import type { DetectionEvent } from "../api/detections.types";
 
-/* ── MOCK event slots ───────────────────────────────────────────────────── */
-type EventType = "vehicle" | "person" | "activity" | "security";
+/* ── Constants ────────────────────────────────────────────────────────────── */
+/** Number of 5-minute slots shown in the timeline. */
+export const SLOT_COUNT = 7;
+/** Duration of each slot in milliseconds. */
+export const SLOT_MS = 5 * 60 * 1000;
+/** Backend MAX_LIMIT — passed as `limit` to keep records consistent with promise. */
+const REQUEST_LIMIT = 50;
 
-interface TimeSlot {
+/* ── Bucketing helpers (exported for unit tests) ─────────────────────────── */
+export interface TimeSlot {
   id: string;
-  time: string;
-  type: EventType;
-  count: number;
+  startMs: number;
+  timeLabel: string;
+  /** Dominant category for the bubble icon — based on unfiltered events. */
+  dominantType: DetectionCategory;
+  /** Total events in this slot, regardless of category filter. */
+  allCount: number;
+  /** Per-category counts for the filter dropdown. */
+  counts: Record<DetectionCategory, number>;
+  /** True for the slot that contains `nowMs`. */
   isLive: boolean;
 }
 
-// MOCK — simulated detection events for UI demonstration only
-const MOCK_SLOTS: TimeSlot[] = [
-  { id: "t1", time: "10:30 AM",    type: "security",  count: 3,  isLive: false },
-  { id: "t2", time: "10:35 AM",    type: "activity",  count: 7,  isLive: false },
-  { id: "t3", time: "10:40 AM",    type: "vehicle",   count: 12, isLive: false },
-  { id: "t4", time: "10:45:23 AM", type: "person",    count: 5,  isLive: true  },
-  { id: "t5", time: "10:50 AM",    type: "activity",  count: 4,  isLive: false },
-  { id: "t6", time: "10:55 AM",    type: "vehicle",   count: 8,  isLive: false },
-  { id: "t7", time: "11:00 AM",    type: "security",  count: 2,  isLive: false },
-];
+/** Zero-initialised per-category count record. */
+function zeroCounts(): Record<DetectionCategory, number> {
+  return { vehicle: 0, person: 0, activity: 0, security: 0 };
+}
 
+/**
+ * Returns the dominant DetectionCategory by count.
+ * Tie-breaks in priority order: security > vehicle > person > activity.
+ * Returns "activity" when counts are all zero.
+ */
+export function dominantCategory(counts: Record<DetectionCategory, number>): DetectionCategory {
+  const priority: DetectionCategory[] = ["security", "vehicle", "person", "activity"];
+  return priority.reduce<DetectionCategory>(
+    (best, cat) => (counts[cat] > counts[best] ? cat : best),
+    "activity",
+  );
+}
+
+/**
+ * Format a UTC epoch ms as a local-time slot label.
+ * Example: 1_718_000_000_000 → "10:30 AM"
+ */
+export function formatSlotTime(ms: number): string {
+  return new Date(ms).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+/**
+ * Build SLOT_COUNT five-minute slots ending at (or containing) `nowMs`.
+ * Events are bucketed by `received_at`; records with null or invalid
+ * timestamps are skipped.
+ */
+export function buildTimeSlots(events: DetectionEvent[], nowMs: number): TimeSlot[] {
+  // Snap to the START of the current 5-minute bucket
+  const currentBucketStart = Math.floor(nowMs / SLOT_MS) * SLOT_MS;
+
+  return Array.from({ length: SLOT_COUNT }, (_, i) => {
+    const slotStart = currentBucketStart - (SLOT_COUNT - 1 - i) * SLOT_MS;
+    const slotEnd = slotStart + SLOT_MS;
+    const isLive = i === SLOT_COUNT - 1;
+
+    const slotEvents = events.filter((e) => {
+      if (!e.received_at) return false;
+      const t = new Date(e.received_at).getTime();
+      return !Number.isNaN(t) && t >= slotStart && t < slotEnd;
+    });
+
+    const counts = zeroCounts();
+    for (const e of slotEvents) {
+      counts[classifyDetection(e.type)]++;
+    }
+
+    return {
+      id: `slot-${slotStart}`,
+      startMs: slotStart,
+      timeLabel: formatSlotTime(slotStart),
+      dominantType: dominantCategory(counts),
+      allCount: slotEvents.length,
+      counts,
+      isLive,
+    };
+  });
+}
+
+/** Count to display for a slot given the current filter. */
+function filteredCount(slot: TimeSlot, filter: string): number {
+  if (filter === "all") return slot.allCount;
+  return slot.counts[filter as DetectionCategory] ?? 0;
+}
+
+/* ── Filter options ───────────────────────────────────────────────────────── */
 const FILTER_OPTIONS = [
-  { value: "all",      label: "All Events"  },
-  { value: "vehicle",  label: "Vehicle"     },
-  { value: "person",   label: "Person"      },
-  { value: "activity", label: "Activity"    },
-  { value: "security", label: "Security"    },
+  { value: "all",      label: "All Events" },
+  { value: "vehicle",  label: "Vehicle"    },
+  { value: "person",   label: "Person"     },
+  { value: "activity", label: "Activity"   },
+  { value: "security", label: "Security"   },
 ];
 
-/* ── Inline SVG icons (no lucide-react) ─────────────────────────────────── */
+/* ── Inline SVG icons (no lucide-react) ──────────────────────────────────── */
 function VehicleIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -46,7 +133,6 @@ function VehicleIcon() {
     </svg>
   );
 }
-
 function PersonIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -55,7 +141,6 @@ function PersonIcon() {
     </svg>
   );
 }
-
 function ActivityIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -65,7 +150,6 @@ function ActivityIcon() {
     </svg>
   );
 }
-
 function SecurityIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -74,7 +158,7 @@ function SecurityIcon() {
   );
 }
 
-function BubbleIcon({ type }: { type: EventType }) {
+function BubbleIcon({ type }: { type: DetectionCategory }) {
   switch (type) {
     case "vehicle":  return <VehicleIcon />;
     case "person":   return <PersonIcon />;
@@ -83,13 +167,30 @@ function BubbleIcon({ type }: { type: EventType }) {
   }
 }
 
+/* ── Props ───────────────────────────────────────────────────────────────── */
+interface Props {
+  /** When set, restricts detections to this camera source. */
+  cameraSourceId?: string | null;
+}
+
 /* ── Component ───────────────────────────────────────────────────────────── */
-export default function LiveAiTimeline() {
+export default function LiveAiTimeline({ cameraSourceId }: Props) {
   const [filter, setFilter] = useState<string>("all");
 
-  const visible = filter === "all"
-    ? MOCK_SLOTS
-    : MOCK_SLOTS.map((s) => ({ ...s, count: s.type === filter ? s.count : 0 }));
+  const { data, isLoading, isError, refetch } = useRecentDetections({
+    limit: REQUEST_LIMIT,
+    cameraSourceId,
+  });
+
+  // Build slots from the resolved data; Date.now() is captured inside useMemo
+  // so it reflects the time when data last arrived, not each render.
+  const slots = useMemo(() => {
+    const events = data?.data ?? [];
+    return buildTimeSlots(events, Date.now());
+  }, [data]);
+
+  const hasData = !isLoading && !isError && data != null;
+  const allEmpty = hasData && slots.every((s) => s.allCount === 0);
 
   return (
     <div className="lm-htl-card">
@@ -97,32 +198,8 @@ export default function LiveAiTimeline() {
       <div className="lm-htl-header">
         <span className="lm-htl-title">AI Detection Timeline</span>
 
-        {/* Live Feed badge with pulsing dot */}
-        <span className="lm-htl-live-badge" aria-label="Live feed active">
-          <span className="lm-htl-live-dot" aria-hidden="true" />
-          Live Feed
-        </span>
-
-        {/* SIMULATED notice */}
-        <span
-          style={{
-            marginLeft: "0.25rem",
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "0.125rem 0.4375rem",
-            borderRadius: "9999px",
-            fontSize: "0.5625rem",
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase" as const,
-            background: "rgba(245,158,11,0.1)",
-            color: "#b45309",
-            border: "1px solid rgba(245,158,11,0.28)",
-          }}
-          title="This timeline displays simulated data for demonstration purposes"
-        >
-          SIMULATED
-        </span>
+        {/* NOTE: "Live Feed" badge removed — the endpoint is polled every 30 s,
+            not pushed in realtime. No badge is shown to avoid implying a stream. */}
 
         {/* All Events filter */}
         <select
@@ -139,41 +216,75 @@ export default function LiveAiTimeline() {
         </select>
       </div>
 
-      {/* ── Scrollable time-axis track ── */}
-      <div className="lm-htl-scroll" role="region" aria-label="AI detection timeline">
-        <div className="lm-htl-track">
-          {visible.map((slot) => (
-            <div
-              key={slot.id}
-              className={`lm-htl-slot${slot.isLive ? " lm-htl-slot--live" : ""}`}
-              aria-label={`${slot.time}: ${slot.count} ${slot.type} detection${slot.count !== 1 ? "s" : ""}${slot.isLive ? " (live)" : ""}`}
-            >
-              {/* Time label — above the axis zone */}
-              <span className="lm-htl-time-label">{slot.time}</span>
-
-              {/* Axis row — fixed height zone; LIVE pip is absolutely positioned inside */}
-              <div className="lm-htl-axis-row" aria-hidden="true">
-                {/* LIVE pill: floats above the axis line via absolute positioning in CSS */}
-                {slot.isLive && (
-                  <span className="lm-htl-live-pip">
-                    <span aria-hidden="true">●</span>&nbsp;LIVE
-                  </span>
-                )}
-                {/* Axis line with ruler tick (::before) and live dot (::after on live slot) */}
-                <div className="lm-htl-axis-tick" />
-              </div>
-
-              {/* Event bubble + count — inline row below axis */}
-              <div className="lm-htl-slot-body">
-                <div className={`lm-htl-bubble lm-htl-bubble--${slot.type}`} aria-hidden="true">
-                  <BubbleIcon type={slot.type} />
-                </div>
-                <div className="lm-htl-count">{slot.count}</div>
-              </div>
-            </div>
-          ))}
+      {/* ── Loading state ── */}
+      {isLoading && !data && (
+        <div className="lm-loading" role="status" aria-label="Loading detection timeline">
+          Loading…
         </div>
-      </div>
+      )}
+
+      {/* ── Error state — never fall back to mock data ── */}
+      {isError && !data && (
+        <div className="lm-error-box" role="alert">
+          <span>Failed to load detections</span>
+          <button className="lm-retry-btn" onClick={() => void refetch()}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* ── Scrollable timeline track — always rendered when data is available ── */}
+      {hasData && (
+        <div className="lm-htl-scroll" role="region" aria-label="AI detection timeline">
+          <div className="lm-htl-track">
+            {slots.map((slot) => {
+              const count = filteredCount(slot, filter);
+              return (
+                <div
+                  key={slot.id}
+                  className={`lm-htl-slot${slot.isLive ? " lm-htl-slot--live" : ""}${count === 0 ? " lm-htl-slot--empty" : ""}`}
+                  aria-label={`${slot.timeLabel}: ${count} ${filter === "all" ? "" : filter + " "}detection${count !== 1 ? "s" : ""}${slot.isLive ? " (current)" : ""}`}
+                >
+                  <span className="lm-htl-time-label">{slot.timeLabel}</span>
+
+                  <div className="lm-htl-axis-row" aria-hidden="true">
+                    {slot.isLive && (
+                      <span className="lm-htl-live-pip">
+                        <span aria-hidden="true">●</span>&nbsp;LIVE
+                      </span>
+                    )}
+                    <div className="lm-htl-axis-tick" />
+                  </div>
+
+                  <div className="lm-htl-slot-body">
+                    <div
+                      className={`lm-htl-bubble lm-htl-bubble--${count > 0 ? slot.dominantType : "empty"}`}
+                      aria-hidden="true"
+                    >
+                      {count > 0 ? <BubbleIcon type={slot.dominantType} /> : (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="lm-htl-count" style={count === 0 ? { opacity: 0.35 } : undefined}>
+                      {count}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Quiet-period notice inside the track, visible only when all buckets are empty */}
+          {allEmpty && (
+            <p style={{ margin: "0.25rem 0 0.5rem", textAlign: "center", fontSize: "0.6875rem", color: "var(--color-gray-400, #9ca3af)" }}>
+              No detections in the past {SLOT_COUNT * 5} minutes
+              {cameraSourceId ? " for this camera" : ""}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Legend ── */}
       <div className="lm-htl-legend" aria-label="Legend">
@@ -198,6 +309,22 @@ export default function LiveAiTimeline() {
           AI Confidence Score
         </span>
       </div>
+
+      {/* ── Data-coverage note ── */}
+      {hasData && (
+        <div
+          style={{
+            padding: "0.25rem 0.75rem 0.5rem",
+            fontSize: "0.625rem",
+            color: "var(--color-gray-400, #9ca3af)",
+            letterSpacing: "0.02em",
+          }}
+          aria-label="Data coverage note"
+        >
+          Up to {REQUEST_LIMIT} most-recent detections · polls every 30 s
+          {cameraSourceId ? " · this camera" : " · all cameras"}
+        </div>
+      )}
     </div>
   );
 }

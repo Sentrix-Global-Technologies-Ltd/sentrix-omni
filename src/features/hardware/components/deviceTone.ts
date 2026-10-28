@@ -15,6 +15,8 @@ export function deviceStatusTone(status: string): Tone {
     case "faulty":
     case "error":
       return "error";
+    case "maintenance":
+      return "warning";
     default:
       return "light";
   }

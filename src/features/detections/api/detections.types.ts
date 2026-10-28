@@ -22,6 +22,12 @@ export interface DetectionEvent {
   created_at: string | null;
 }
 
+/** Query parameters accepted by the organisation detections endpoint.
+ * Mirrors OrganizationDetectionController::recent() filter contract. */
 export interface DetectionFilters {
+  /** Max records to return. Default 20, backend cap 50. */
   limit?: number;
+  /** When true: only threshold-crossed events. When false: only suppressed.
+   *  Omit to return both (default). */
+  triggered?: boolean;
 }

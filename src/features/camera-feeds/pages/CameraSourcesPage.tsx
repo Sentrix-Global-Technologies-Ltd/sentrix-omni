@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
+import { createPortal } from "react-dom";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
 import Pagination from "../../../components/ui/pagination/Pagination";
@@ -10,9 +12,14 @@ import { useDeleteCameraSource } from "../hooks/useCameraSourceActions";
 import { CAMERA_SOURCE_TYPES } from "../components/cameraSourceTypeMeta";
 import CameraSourcesRichTable from "../components/CameraSourcesRichTable";
 import AddCameraSourceDrawer from "../components/AddCameraSourceDrawer";
+import EditCameraSourceDrawer from "../components/EditCameraSourceDrawer";
+import CameraSourceDetailDrawer from "../components/CameraSourceDetailDrawer";
 import CameraSourceKpiCard from "../components/CameraSourceKpiCard";
 import type { CameraSource } from "../api/camera-feeds.types";
 import "../styles/camera-sources.css";
+
+/** Source types considered field / mobile — used by the "Field sources" additional filter. */
+const FIELD_SOURCE_TYPES = new Set(["phone", "dashcam", "smart_glasses"]);
 
 interface PaginatorMeta {
   current_page?: number;
@@ -76,46 +83,100 @@ export default function CameraSourcesPage() {
   const [site, setSite] = useState("");
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CameraSource | null>(null);
+  const [viewTarget, setViewTarget] = useState<CameraSource | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // ── Additional-filters popover ─────────────────────────────────────────────
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [filterPopoverStyle, setFilterPopoverStyle] = useState<React.CSSProperties>({});
   const [filterHealthWarnings, setFilterHealthWarnings] = useState(false);
   const [filterHasTags, setFilterHasTags] = useState(false);
   const [filterFieldSources, setFilterFieldSources] = useState(false);
+
+  // filterBtnRef: on the wrapper div, used for outside-click detection on button side
   const filterBtnRef = useRef<HTMLDivElement>(null);
+  // filterBtnElRef: on the <button> itself, used to measure position for the portal
+  const filterBtnElRef = useRef<HTMLButtonElement>(null);
+  // filterPopoverRef: on the portal popover div, so clicks inside it don't close it
+  const filterPopoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!filterPopoverOpen) return;
     const handler = (e: MouseEvent) => {
-      if (filterBtnRef.current && !filterBtnRef.current.contains(e.target as Node)) {
-        setFilterPopoverOpen(false);
-      }
+      const target = e.target as Node;
+      const inBtn = filterBtnRef.current?.contains(target) ?? false;
+      const inPop = filterPopoverRef.current?.contains(target) ?? false;
+      if (!inBtn && !inPop) setFilterPopoverOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [filterPopoverOpen]);
 
-  const query = useCameraFeeds({ q, type, status, page });
+  const handleFilterToggle = () => {
+    if (filterPopoverOpen) { setFilterPopoverOpen(false); return; }
+    if (!filterBtnElRef.current) return;
+    const rect = filterBtnElRef.current.getBoundingClientRect();
+    const popoverWidth = 260;
+    // Align to left edge of button; clamp so it stays inside viewport
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 8) {
+      left = window.innerWidth - popoverWidth - 8;
+    }
+    if (left < 8) left = 8;
+    setFilterPopoverStyle({
+      position: "fixed",
+      top: rect.bottom + 8,
+      left,
+      zIndex: 9999,
+      minWidth: popoverWidth,
+    });
+    setFilterPopoverOpen(true);
+  };
+
+  const query = useCameraFeeds({ q, type, status, site, page });
   const del = useDeleteCameraSource();
   const toast = useToast();
 
-  const sources = useMemo(() => query.data?.data ?? [], [query.data]);
+  const rawSources = useMemo(() => query.data?.data ?? [], [query.data]);
+
+  // Open the detail drawer when the URL carries ?view=<sourceId>
+  // (set by LiveMonitoringPage "View Camera Details" button)
+  useEffect(() => {
+    const viewId = searchParams.get("view");
+    if (!viewId || rawSources.length === 0) return;
+    const found = rawSources.find((s) => s.id === viewId);
+    if (found) {
+      setViewTarget(found);
+      // Remove the param so navigating back doesn't re-open
+      setSearchParams((prev) => { prev.delete("view"); return prev; }, { replace: true });
+    }
+  }, [rawSources, searchParams, setSearchParams]);
+
+  /** Apply client-side additional filters over the already-fetched page. */
+  const sources = useMemo(() => {
+    let list = rawSources;
+    if (filterHealthWarnings) list = list.filter((s) => s.health_score !== null && s.health_score < 80);
+    if (filterHasTags)        list = list.filter((s) => s.tags.length > 0);
+    if (filterFieldSources)   list = list.filter((s) => FIELD_SOURCE_TYPES.has(s.type));
+    return list;
+  }, [rawSources, filterHealthWarnings, filterHasTags, filterFieldSources]);
   const meta = query.data?.meta as PaginatorMeta | undefined;
 
-  const total = meta?.total ?? sources.length;
-  const online = sources.filter((s) => s.feed_status === "live").length;
-  const stale = sources.filter((s) => s.feed_status === "stale").length;
-  const offline = sources.filter(
+  const total  = meta?.total ?? rawSources.length;
+  const online  = rawSources.filter((s) => s.feed_status === "live").length;
+  const stale   = rawSources.filter((s) => s.feed_status === "stale").length;
+  const offline = rawSources.filter(
     (s) => s.feed_status === "offline" || s.feed_status === "no_feed",
   ).length;
 
   const siteOptions = useMemo(() => {
     const seen = new Set<string>();
-    for (const s of sources) {
+    for (const s of rawSources) {
       if (s.site) seen.add(s.site);
     }
     return Array.from(seen).map((v) => ({ value: v, label: v }));
-  }, [sources]);
+  }, [rawSources]);
 
   const handleDelete = async (source: CameraSource) => {
     if (!window.confirm(`Remove "${source.label}"? This cannot be undone.`)) return;
@@ -127,7 +188,7 @@ export default function CameraSourcesPage() {
     }
   };
 
-  const hasFilters = Boolean(q || type || status || site);
+  const hasFilters = Boolean(q || type || status || site || filterHealthWarnings || filterHasTags || filterFieldSources);
   const hasAdditionalFilters = filterHealthWarnings || filterHasTags || filterFieldSources;
 
   return (
@@ -200,12 +261,13 @@ export default function CameraSourcesPage() {
           </select>
         )}
 
-        {/* Filters button + popover */}
-        <div ref={filterBtnRef} style={{ position: "relative", flex: "0 0 auto" }}>
+        {/* Filters button — popover rendered via portal for mobile viewport safety */}
+        <div ref={filterBtnRef} style={{ flex: "0 0 auto" }}>
           <button
+            ref={filterBtnElRef}
             type="button"
             className="cs-filter-btn"
-            onClick={() => setFilterPopoverOpen((v) => !v)}
+            onClick={handleFilterToggle}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
@@ -213,63 +275,65 @@ export default function CameraSourcesPage() {
             Filters
             {hasAdditionalFilters && <span className="cs-filter-btn-dot" />}
           </button>
-
-          {filterPopoverOpen && (
-            <div className="cs-filter-popover">
-              <p className="cs-filter-popover-title">Additional filters</p>
-
-              <label className="cs-filter-popover-row">
-                <input
-                  type="checkbox"
-                  checked={filterHealthWarnings}
-                  onChange={(e) => setFilterHealthWarnings(e.target.checked)}
-                  className="cs-filter-popover-check"
-                />
-                Has health warnings
-              </label>
-
-              <label className="cs-filter-popover-row">
-                <input
-                  type="checkbox"
-                  checked={filterHasTags}
-                  onChange={(e) => setFilterHasTags(e.target.checked)}
-                  className="cs-filter-popover-check"
-                />
-                Has tags
-              </label>
-
-              <label className="cs-filter-popover-row">
-                <input
-                  type="checkbox"
-                  checked={filterFieldSources}
-                  onChange={(e) => setFilterFieldSources(e.target.checked)}
-                  className="cs-filter-popover-check"
-                />
-                Field sources
-              </label>
-
-              <button
-                type="button"
-                className="cs-filter-popover-apply"
-                onClick={() => setFilterPopoverOpen(false)}
-              >
-                Apply filters
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Clear link */}
         {hasFilters && (
           <button
             type="button"
-            onClick={() => { setQ(""); setType(""); setStatus(""); setSite(""); setPage(1); }}
+            onClick={() => { setQ(""); setType(""); setStatus(""); setSite(""); setFilterHealthWarnings(false); setFilterHasTags(false); setFilterFieldSources(false); setPage(1); }}
             className="text-theme-sm font-medium text-brand-500 hover:underline whitespace-nowrap"
           >
             Clear
           </button>
         )}
       </div>
+
+      {/* Filters popover — portal-rendered so it is never clipped by ancestor overflow on mobile */}
+      {filterPopoverOpen && createPortal(
+        <div ref={filterPopoverRef} className="cs-filter-popover" style={filterPopoverStyle}>
+          <p className="cs-filter-popover-title">Additional filters</p>
+
+          <label className="cs-filter-popover-row">
+            <input
+              type="checkbox"
+              checked={filterHealthWarnings}
+              onChange={(e) => setFilterHealthWarnings(e.target.checked)}
+              className="cs-filter-popover-check"
+            />
+            Has health warnings
+          </label>
+
+          <label className="cs-filter-popover-row">
+            <input
+              type="checkbox"
+              checked={filterHasTags}
+              onChange={(e) => setFilterHasTags(e.target.checked)}
+              className="cs-filter-popover-check"
+            />
+            Has tags
+          </label>
+
+          <label className="cs-filter-popover-row">
+            <input
+              type="checkbox"
+              checked={filterFieldSources}
+              onChange={(e) => setFilterFieldSources(e.target.checked)}
+              className="cs-filter-popover-check"
+            />
+            Field sources
+          </label>
+
+          <button
+            type="button"
+            className="cs-filter-popover-apply"
+            onClick={() => setFilterPopoverOpen(false)}
+          >
+            Apply filters
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Rich table */}
       <CameraSourcesRichTable
@@ -278,9 +342,14 @@ export default function CameraSourcesPage() {
         error={query.error}
         onRetry={() => void query.refetch()}
         onDelete={(s) => void handleDelete(s)}
+        onEdit={(s) => setEditTarget(s)}
+        onView={(s) => setViewTarget(s)}
       />
 
-      {meta && (
+      {/* Pagination / row count
+          - Pagination component returns null when lastPage <= 1, so we render a simple
+            row-count line for single-page results so the user always sees how many sources exist. */}
+      {meta && (meta.last_page ?? 1) > 1 ? (
         <Pagination
           currentPage={meta.current_page ?? 1}
           lastPage={meta.last_page ?? 1}
@@ -289,9 +358,19 @@ export default function CameraSourcesPage() {
           to={meta.to}
           onPageChange={setPage}
         />
-      )}
+      ) : meta && (meta.total ?? 0) > 0 ? (
+        <p className="px-1 py-3 text-sm text-gray-500 dark:text-gray-400">
+          Showing {meta.from ?? 1}–{meta.to ?? meta.total ?? 0} of {meta.total ?? 0} sources
+        </p>
+      ) : null}
 
       <AddCameraSourceDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <EditCameraSourceDrawer source={editTarget} onClose={() => setEditTarget(null)} />
+      <CameraSourceDetailDrawer
+          source={viewTarget}
+          onClose={() => setViewTarget(null)}
+          onEdit={(s) => { setViewTarget(null); setEditTarget(s); }}
+        />
     </>
   );
 }

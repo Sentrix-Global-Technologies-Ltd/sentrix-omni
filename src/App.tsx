@@ -44,8 +44,10 @@ const EvidenceConsolePage = lazy(() => import("./features/evidence/pages/Evidenc
 const IntelConsolePage = lazy(() => import("./features/intel/pages/IntelConsolePage"));
 const HardwareConsolePage = lazy(() => import("./features/hardware/pages/HardwareConsolePage"));
 const LiveMonitoringPage = lazy(() => import("./features/camera-feeds/pages/LiveMonitoringPage"));
+const CameraViewerPage = lazy(() => import("./features/camera-feeds/pages/CameraViewerPage"));
 const CameraSourcesPage = lazy(() => import("./features/camera-feeds/pages/CameraSourcesPage"));
 const FacilityMapPage = lazy(() => import("./features/facility/pages/FacilityMapPage"));
+const DetectionsPage = lazy(() => import("./features/detections/pages/DetectionsPage"));
 const AiAnalyticsPage = lazy(() => import("./features/intel/pages/AiAnalyticsPage"));
 const AccessConsolePage = lazy(() => import("./features/access/pages/AccessConsolePage"));
 const WebhooksConsolePage = lazy(() => import("./features/webhooks/pages/WebhooksConsolePage"));
@@ -157,12 +159,16 @@ export default function App() {
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/vision-guard/live"]} />}>
                   <Route path="/vision-guard/live" element={<LiveMonitoringPage />} />
+                  <Route path="/vision-guard/live/:sourceId" element={<CameraViewerPage />} />
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/vision-guard/camera-sources"]} />}>
                   <Route path="/vision-guard/camera-sources" element={<CameraSourcesPage />} />
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/vision-guard/facility-map"]} />}>
                   <Route path="/vision-guard/facility-map" element={<FacilityMapPage />} />
+                </Route>
+                <Route element={<RequirePermission rule={accessByPath["/vision-guard/detections"]} />}>
+                  <Route path="/vision-guard/detections" element={<DetectionsPage />} />
                 </Route>
                 <Route element={<RequirePermission rule={accessByPath["/vision-guard/ai-analytics"]} />}>
                   <Route path="/vision-guard/ai-analytics" element={<AiAnalyticsPage />} />

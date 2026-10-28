@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <!-- bell body -->
+  <path d="M6 10a6 6 0 0 1 12 0c0 3.5 1.5 5 2 6H4c.5-1 2-2.5 2-6Z"/>
+  <!-- clapper -->
+  <path d="M10 21a2 2 0 0 0 4 0"/>
+  <!-- ring lines on top -->
+  <line x1="12" y1="2" x2="12" y2="4"/>
+</svg>

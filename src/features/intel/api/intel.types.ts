@@ -23,6 +23,8 @@ export interface IntelReport {
   emergencies: { total: number; by_status: Record<string, number> };
   trips: { total: number };
   observations: { total: number };
+  /** Detection events received within the reporting window (30d by default). */
+  detections: { total: number };
   response_time_seconds: {
     methodology: string;
     incident_dispatch: DurationSummary;

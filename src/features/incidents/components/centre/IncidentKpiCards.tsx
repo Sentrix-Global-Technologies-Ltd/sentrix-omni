@@ -51,7 +51,7 @@ export default function IncidentKpiCards({
       <KpiCard label="Open"            value={open}     accent="warning"  sub="Awaiting action" />
       <KpiCard label="Escalated"       value={escalated} accent="critical" sub="Needs attention" />
       <KpiCard label="Critical"        value={critical} accent="critical" sub="High severity" />
-      <KpiCard label="Resolved"        value={resolved} accent="success"  sub="This period" />
+      <KpiCard label="Resolved"        value={resolved} accent="success"  sub="All time" />
     </div>
   );
 }

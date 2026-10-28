@@ -1,6 +1,6 @@
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
-import BridgeActions from "./BridgeActions";
+import BridgeRowMenu from "./BridgeRowMenu";
 import { bridgeHealthTone, relativeTime, titleCase } from "./siteBridgeTone";
 import type { CameraBridge } from "../api/site-bridges.types";
 
@@ -38,10 +38,10 @@ export default function BridgeTable({ bridges, isLoading, error, onRetry }: Prop
     },
     {
       key: "actions",
-      header: "",
+      header: "Actions",
       headerClassName: "text-right",
-      className: "text-right",
-      render: (b) => <BridgeActions bridge={b} />,
+      className: "text-right w-16",
+      render: (b) => <BridgeRowMenu bridge={b} />,
     },
   ];
 

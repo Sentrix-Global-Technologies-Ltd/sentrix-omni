@@ -7,16 +7,29 @@ const base = (orgId: string) => `organizations/${orgId}/evidence`;
 /** Evidence vault endpoints (org-scoped). */
 export const evidenceApi = {
   search(orgId: string, filters: EvidenceFilters): Promise<ApiResult<Observation[]>> {
-    return apiClient.get<Observation[]>(`${base(orgId)}/search`, {
-      query: {
-        kind: filters.kind || undefined,
-        severity: filters.severity || undefined,
-        status: filters.status || undefined,
-        plate: filters.plate || undefined,
-        q: filters.q || undefined,
-        cursor: filters.cursor || undefined,
-      },
-    });
+    // Build query params — omit falsy values so the backend never receives
+    // empty strings, which could be misinterpreted as a filter value.
+    const query: Record<string, string> = {};
+    if (filters.kind)             query.kind             = filters.kind;
+    if (filters.severity)         query.severity         = filters.severity;
+    if (filters.status)           query.status           = filters.status;
+    if (filters.plate)            query.plate            = filters.plate;
+    if (filters.q)                query.q                = filters.q;
+    if (filters.cursor)           query.cursor           = filters.cursor;
+    if (filters.per_page)         query.per_page         = String(filters.per_page);
+    // Batch 2 additions — forwarded to backend applyFacets() directly.
+    if (filters.camera_source_id) query.camera_source_id = filters.camera_source_id;
+    if (filters.from)             query.from             = filters.from;
+    // `to` is stored as a plain YYYY-MM-DD date. Without a time component,
+    // Carbon::parse() on the backend resolves to midnight UTC, which would
+    // exclude all observations on that day after 00:00:00. Appending T23:59:59
+    // makes Carbon parse to end-of-day so the selected date is fully included.
+    if (filters.to)               query.to               = `${filters.to}T23:59:59`;
+    if (filters.color)            query.color            = filters.color;
+    if (filters.make)             query.make             = filters.make;
+    if (filters.model)            query.model            = filters.model;
+    if (filters.item)             query.item             = filters.item;
+    return apiClient.get<Observation[]>(`${base(orgId)}/search`, { query });
   },
 
   stats(orgId: string): Promise<ApiResult<EvidenceStats>> {

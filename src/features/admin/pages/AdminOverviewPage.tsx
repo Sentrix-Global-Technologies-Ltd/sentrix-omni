@@ -1,17 +1,16 @@
 import { useMemo } from "react";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import StatCard from "../../../components/shared/StatCard";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import EmptyState from "../../../components/ui/state/EmptyState";
-import { AlertHexaIcon, DollarLineIcon, GroupIcon, PlugInIcon } from "../../../icons";
+import { AlertHexaIcon } from "../../../icons";
 import { formatDateTime, humanize } from "../../../lib/format";
+import "../../incidents/styles/incidents-centre.css";
 
 import InvitationsCard from "../../settings/components/InvitationsCard";
 import { useOrganizationDetails } from "../../settings/hooks/useOrganizationDetails";
 import { useInvitations } from "../../settings/hooks/useInvitations";
 import { useSubscription } from "../../billing/hooks/useBilling";
-import { useWebhooks } from "../../webhooks/hooks/useWebhooks";
 import { useStorage } from "../../retention/hooks/useRetention";
 import { useWebhookHealth } from "../hooks/useWebhookHealth";
 
@@ -23,6 +22,13 @@ function subscriptionTone(s: string): "success" | "warning" | "error" | "light" 
   if (s === "past_due" || s === "pending") return "warning";
   if (s === "cancelled" || s === "canceled") return "error";
   return "light";
+}
+
+function subscriptionAccent(s: string): string {
+  if (s === "active") return "ic-stat-accent--success";
+  if (s === "past_due" || s === "pending") return "ic-stat-accent--warning";
+  if (s === "cancelled" || s === "canceled") return "ic-stat-accent--critical";
+  return "ic-stat-accent--neutral";
 }
 
 function formatStorageValue(key: string, value: unknown): string {
@@ -42,7 +48,7 @@ function formatStorageValue(key: string, value: unknown): string {
 /**
  * Account-health landing for organization administrators. Every widget reuses
  * an existing feature's hooks/components as-is (InvitationsCard verbatim;
- * subscription/webhooks/storage read via their existing hooks). The failed-
+ * subscription/storage read via their existing hooks). The failed-
  * delivery count (useWebhookHealth) reads the aggregate webhook-deliveries
  * endpoint's `meta.total` under a `success=0` filter — a single request, not
  * a per-webhook fan-out. Distinct from the Operations Command Center, which
@@ -52,10 +58,8 @@ export default function AdminOverviewPage() {
   const org = useOrganizationDetails();
   const invitations = useInvitations();
   const subscription = useSubscription();
-  const webhooks = useWebhooks();
   const storage = useStorage();
 
-  const allWebhooks = useMemo(() => webhooks.data?.data ?? [], [webhooks.data]);
   const { failedCount, isLoading: webhookHealthLoading } = useWebhookHealth();
 
   const pendingInvitations = (invitations.data?.data ?? []).filter((i) => i.status === "pending").length;
@@ -75,46 +79,51 @@ export default function AdminOverviewPage() {
       />
 
       {/* Critical account-health KPIs */}
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Members"
-            tone="info"
-            icon={<GroupIcon className="size-6" />}
-            loading={org.isLoading}
-            value={org.data?.data?.members_count ?? 0}
-            to="/settings"
-          />
+      <div className="ic-kpi-grid">
+        {/* Members */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Members</span>
+          {org.isLoading ? (
+            <span className="ic-stat-skeleton" />
+          ) : (
+            <span className="ic-stat-value">{org.data?.data?.members_count ?? 0}</span>
+          )}
+          <span className="ic-stat-accent ic-stat-accent--info" />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Pending invitations"
-            tone="warning"
-            icon={<GroupIcon className="size-6" />}
-            loading={invitations.isLoading}
-            value={pendingInvitations}
-            to="/settings"
-          />
+
+        {/* Pending invitations */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Pending invitations</span>
+          {invitations.isLoading ? (
+            <span className="ic-stat-skeleton" />
+          ) : (
+            <span className="ic-stat-value">{pendingInvitations}</span>
+          )}
+          <span className="ic-stat-accent ic-stat-accent--warning" />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Subscription"
-            tone={sub ? subscriptionTone(sub.status) : "light"}
-            icon={<DollarLineIcon className="size-6" />}
-            loading={subscription.isLoading}
-            value={sub ? humanize(sub.status) : "—"}
-            to="/billing"
-          />
+
+        {/* Subscription */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Subscription</span>
+          {subscription.isLoading ? (
+            <span className="ic-stat-skeleton" />
+          ) : (
+            <span className="ic-stat-value" style={{ fontSize: "1.25rem" }}>
+              {sub ? humanize(sub.status) : "—"}
+            </span>
+          )}
+          <span className={`ic-stat-accent ${sub ? subscriptionAccent(sub.status) : "ic-stat-accent--neutral"}`} />
         </div>
-        <div className="col-span-12 sm:col-span-6 xl:col-span-3">
-          <StatCard
-            label="Failed webhook deliveries"
-            tone={failedCount > 0 ? "error" : "success"}
-            icon={<PlugInIcon className="size-6" />}
-            loading={webhookHealthLoading}
-            value={failedCount}
-            to="/webhooks"
-          />
+
+        {/* Failed webhook deliveries */}
+        <div className="ic-stat-card">
+          <span className="ic-stat-label">Failed webhook deliveries</span>
+          {webhookHealthLoading ? (
+            <span className="ic-stat-skeleton" />
+          ) : (
+            <span className="ic-stat-value">{failedCount}</span>
+          )}
+          <span className={`ic-stat-accent ${failedCount > 0 ? "ic-stat-accent--critical" : "ic-stat-accent--success"}`} />
         </div>
       </div>
 
@@ -139,22 +148,6 @@ export default function AdminOverviewPage() {
               </div>
             ) : (
               <EmptyState title="No subscription" description={subscription.isLoading ? "Loading…" : "No active subscription."} />
-            )}
-          </div>
-
-          <div className={card}>
-            <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Webhooks</h3>
-            {allWebhooks.length === 0 ? (
-              <EmptyState title="No webhooks" description={webhooks.isLoading ? "Loading…" : "No webhooks configured."} />
-            ) : (
-              <ul className="space-y-2">
-                {allWebhooks.map((w) => (
-                  <li key={w.id} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0 dark:border-gray-800">
-                    <span className="truncate text-theme-sm text-gray-700 dark:text-gray-300">{w.url}</span>
-                    <StatusBadge tone={w.active ? "success" : "light"}>{w.active ? "Active" : "Inactive"}</StatusBadge>
-                  </li>
-                ))}
-              </ul>
             )}
           </div>
 

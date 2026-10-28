@@ -5,9 +5,13 @@ import { incidentKeys } from "../api/incidents.keys";
 
 const INCIDENT_EVENTS = [
   "incident.opened",
+  // Fired by IncidentStatusChanged when startInvestigation() transitions open → investigating.
+  "incident.status_changed",
   "incident.escalated",
   "incident.resolved",
   "incident.closed",
+  // Fired by IncidentAuthoritiesNotified (manual record — no automated dispatch).
+  "incident.authorities_notified",
 ];
 
 /**

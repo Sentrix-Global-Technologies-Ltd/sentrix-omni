@@ -291,12 +291,6 @@ export default function AiAnalyticsPage() {
                 </button>
               ))}
             </div>
-            {/* Export CSV */}
-            <Can permission="intel.export">
-              <Button size="sm" variant="outline" disabled={exportCsv.isPending} onClick={onExport}>
-                {exportCsv.isPending ? "Exporting…" : "Export CSV"}
-              </Button>
-            </Can>
           </div>
         }
       />

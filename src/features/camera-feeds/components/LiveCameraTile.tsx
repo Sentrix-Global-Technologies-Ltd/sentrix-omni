@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useNavigate } from "react-router";
 import { useAuthenticatedImage } from "../../../hooks/useAuthenticatedImage";
 import type { CameraSource, FeedStatus } from "../api/camera-feeds.types";
 
@@ -8,6 +9,7 @@ interface Props {
   selected?: boolean;
   onSelect: () => void;
   onFullscreen: () => void;
+  onOpenViewer: (source: CameraSource) => void;
 }
 
 function statusLabel(s: FeedStatus): string {
@@ -54,9 +56,15 @@ function IconVolumeX() {
  * - Fullscreen via browser Fullscreen API (real).
  * - Snapshot and mute are UI demonstrations (no backend capability) — clearly marked.
  */
-export default function LiveCameraTile({ source, index, selected, onSelect, onFullscreen }: Props) {
+export default function LiveCameraTile({ source, index, selected, onSelect, onFullscreen, onOpenViewer }: Props) {
   const { src } = useAuthenticatedImage(source.last_frame_url, source.last_frame_at);
+  const navigate = useNavigate();
   const tileRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenViewer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/vision-guard/live/${source.id}`);
+  };
 
   const gradientIndex = index % 9;
   const feedStatus = source.feed_status;
@@ -92,8 +100,17 @@ export default function LiveCameraTile({ source, index, selected, onSelect, onFu
       aria-label={`Select camera ${source.label}`}
       aria-pressed={selected}
     >
-      {/* Preview: gradient background + real frame when available */}
-      <div className={`lm-tile-preview lm-tile-preview--${gradientIndex}`}>
+      {/* Preview: clicking the image/video area opens the dedicated viewer */}
+      <div
+        className={`lm-tile-preview lm-tile-preview--${gradientIndex}`}
+        onClick={handleOpenViewer}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && navigate(`/vision-guard/live/${source.id}`)}
+        aria-label={`Open viewer for ${source.label}`}
+        title="Open camera viewer"
+        style={{ cursor: "pointer" }}
+      >
         {src && (
           <img src={src} alt={source.label} />
         )}

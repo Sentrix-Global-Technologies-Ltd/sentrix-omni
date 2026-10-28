@@ -22,6 +22,9 @@ interface DataTableProps<T> {
   onRetry?: () => void;
   emptyTitle?: string;
   emptyDescription?: string;
+  loadingLabel?: string;
+  /** Per-row extra className — used for selected-row highlighting etc. */
+  rowClassName?: (row: T) => string | undefined;
 }
 
 /**
@@ -39,14 +42,16 @@ export default function DataTable<T>({
   onRetry,
   emptyTitle,
   emptyDescription,
+  loadingLabel,
+  rowClassName,
 }: DataTableProps<T>) {
   // TanStack Query reports "no error" as `null` (not `undefined`), so guard for both.
   const hasError = error !== null && error !== undefined;
   const hasRows = !isLoading && !hasError && rows.length > 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-      <div className="max-w-full overflow-x-auto">
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader className="border-b border-gray-100 dark:border-gray-800">
             <TableRow>
@@ -67,11 +72,14 @@ export default function DataTable<T>({
               {rows.map((row) => (
                 <TableRow
                   key={rowKey(row)}
-                  className={
+                  className={[
                     onRowClick
                       ? "cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                      : undefined
-                  }
+                      : undefined,
+                    rowClassName?.(row),
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || undefined}
                 >
                   {columns.map((col) => (
                     <TableCell
@@ -91,7 +99,7 @@ export default function DataTable<T>({
       </div>
 
       {/* States render full-width below the header. */}
-      {isLoading && <LoadingState />}
+      {isLoading && <LoadingState label={loadingLabel} />}
       {!isLoading && hasError && <ErrorState error={error as Error} onRetry={onRetry} />}
       {!isLoading && !hasError && rows.length === 0 && (
         <EmptyState title={emptyTitle} description={emptyDescription} />

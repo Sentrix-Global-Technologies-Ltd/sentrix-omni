@@ -1,9 +1,5 @@
 import type { LayerKey } from "../data/facilityMockData";
-import {
-  LAYER_DEFS,
-  ZONE_FILTER_OPTIONS,
-  CAMERA_STATUS_COUNTS,
-} from "../data/facilityMockData";
+import { LAYER_DEFS } from "../data/facilityMockData";
 
 // ── Inline layer icons (no external pkg) ────────────────────────────────────
 
@@ -52,14 +48,22 @@ function DragHandle() {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+interface CameraCounts {
+  online: number;
+  offline: number;
+  total: number;
+}
+
 interface Props {
   layers: Record<LayerKey, boolean>;
   onToggleLayer: (key: LayerKey) => void;
   zoneFilter: string;
   onZoneFilter: (v: string) => void;
+  zoneFilterOptions: { value: string; label: string }[];
+  cameraCounts: CameraCounts;
 }
 
-export default function MapControlsPanel({ layers, onToggleLayer, zoneFilter, onZoneFilter }: Props) {
+export default function MapControlsPanel({ layers, onToggleLayer, zoneFilter, onZoneFilter, zoneFilterOptions, cameraCounts }: Props) {
   return (
     <div className="fm-panel">
       <div className="fm-panel-title">Map Controls</div>
@@ -92,7 +96,7 @@ export default function MapControlsPanel({ layers, onToggleLayer, zoneFilter, on
           value={zoneFilter}
           onChange={(e) => onZoneFilter(e.target.value)}
         >
-          {ZONE_FILTER_OPTIONS.map((opt) => (
+          {zoneFilterOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
@@ -104,15 +108,25 @@ export default function MapControlsPanel({ layers, onToggleLayer, zoneFilter, on
       {/* Camera Status */}
       <div className="fm-panel-section">Camera Status</div>
       <div className="fm-status-list">
-        {(["online", "idle", "offline"] as const).map((s) => (
-          <div key={s} className="fm-status-row">
+        {([
+          { key: "online",  label: "Online",  count: cameraCounts.online },
+          { key: "offline", label: "Offline", count: cameraCounts.offline },
+        ] as const).map((s) => (
+          <div key={s.key} className="fm-status-row">
             <div className="fm-status-left">
-              <div className={`fm-status-dot fm-status-dot--${s}`} />
-              <span className="fm-status-label" style={{ textTransform: "capitalize" }}>{s}</span>
+              <div className={`fm-status-dot fm-status-dot--${s.key}`} />
+              <span className="fm-status-label">{s.label}</span>
             </div>
-            <span className="fm-status-count">{CAMERA_STATUS_COUNTS[s]}</span>
+            <span className="fm-status-count">{s.count}</span>
           </div>
         ))}
+        <div className="fm-status-row">
+          <div className="fm-status-left">
+            <div className="fm-status-dot" style={{ background: "#94a3b8" }} />
+            <span className="fm-status-label">Total</span>
+          </div>
+          <span className="fm-status-count">{cameraCounts.total}</span>
+        </div>
       </div>
     </div>
   );

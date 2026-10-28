@@ -1,0 +1,193 @@
+/* ── Hardware console — shared drawer styles ────────────────────────────────
+ *
+ * The cs-drawer-* classes are the established overlay drawer pattern
+ * (see AddCameraSourceDrawer). They live here so the hardware feature's
+ * RegisterDeviceDrawer can use them without a cross-feature CSS dependency.
+ *
+ * DO NOT add domain logic here — layout and chrome only.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+@keyframes hw-fade-in  { from { opacity: 0 }       to { opacity: 1 } }
+@keyframes hw-slide-in { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+.cs-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(0, 0, 0, 0.35);
+  animation: hw-fade-in 0.15s ease;
+}
+
+.cs-drawer {
+  position: fixed;
+  top: 4.75rem; /* below the sticky AppHeader */
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  width: 420px;
+  max-width: 100vw;
+  background: #fff;
+  box-shadow: -4px 0 32px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: hw-slide-in 0.2s ease;
+}
+:is(.dark *) .cs-drawer { background: var(--color-gray-900, #111827); }
+
+.cs-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray-100, #f3f4f6);
+  flex-shrink: 0;
+}
+:is(.dark *) .cs-drawer-header { border-color: var(--color-gray-800, #1f2937); }
+
+.cs-drawer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-gray-800, #1f2937);
+}
+:is(.dark *) .cs-drawer-title { color: rgba(255, 255, 255, 0.9); }
+
+.cs-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-gray-500, #6b7280);
+  transition: background 0.12s;
+}
+.cs-drawer-close:hover { background: var(--color-gray-100, #f3f4f6); }
+:is(.dark *) .cs-drawer-close:hover { background: rgba(255, 255, 255, 0.08); }
+
+.cs-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+}
+
+.cs-drawer-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-gray-100, #f3f4f6);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+:is(.dark *) .cs-drawer-footer { border-color: var(--color-gray-800, #1f2937); }
+
+/* ── Hardware device table — three-dot row action menu ──────────────────────
+ *
+ * Mirrors the ic-row-menu-* pattern from incidents-centre.css.
+ * Uses hw- prefix to stay self-contained within the hardware feature.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.hw-row-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.hw-row-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.hw-row-menu-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+:is(.dark *) .hw-row-menu-btn {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+:is(.dark *) .hw-row-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hw-row-menu-dropdown {
+  /* Position applied inline via JS (fixed + bounding rect) */
+  min-width: 10rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+:is(.dark *) .hw-row-menu-dropdown {
+  background: #1f2937;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.hw-row-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+:is(.dark *) .hw-row-menu-item {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hw-row-menu-item:hover {
+  background: #f3f4f6;
+}
+
+:is(.dark *) .hw-row-menu-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hw-row-menu-item--danger {
+  color: #dc2626;
+}
+
+:is(.dark *) .hw-row-menu-item--danger {
+  color: #f87171;
+}
+
+.hw-row-menu-item--danger:hover {
+  background: #fee2e2;
+}
+
+:is(.dark *) .hw-row-menu-item--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.hw-row-menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
+:is(.dark *) .hw-row-menu-divider {
+  background: rgba(255, 255, 255, 0.08);
+}

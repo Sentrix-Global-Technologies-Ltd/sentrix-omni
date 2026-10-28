@@ -6,15 +6,14 @@ import interactionPlugin from "@fullcalendar/interaction";
 import type { EventContentArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import StatCard from "../../../components/shared/StatCard";
 import LoadingState from "../../../components/ui/state/LoadingState";
 import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator";
-import { AlertIcon, CalenderIcon, GroupIcon } from "../../../icons";
 import { useRosterCertifications, useRosterResponders, useRosterShifts } from "../hooks/useRoster";
 import ScheduleShiftButton from "../components/ScheduleShiftButton";
 import ShiftDetailModal from "../components/ShiftDetailModal";
 import { responderLabel } from "../../responders/components/responderTone";
 import { useRespondersRealtime } from "../../responders/hooks/useRespondersRealtime";
+import "../../incidents/styles/incidents-centre.css";
 import type { Responder } from "../../responders/api/responders.types";
 import type { DutyShift } from "../../responders/api/profile.types";
 
@@ -98,34 +97,41 @@ export default function RosterPage() {
         }
       />
 
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 sm:col-span-4">
-          <StatCard
-            label="On duty now"
-            tone="success"
-            icon={<GroupIcon className="size-6" />}
-            loading={responders.isLoading}
-            value={onDutyNow}
-            to="/responders?status=available"
-          />
+      <div className="ic-kpi-grid">
+        {/* On duty now */}
+        <div className="ic-stat-card">
+          <div className="ic-stat-label">On duty now</div>
+          <div className="ic-stat-value">
+            {responders.isLoading
+              ? <span className="ic-stat-skeleton" aria-label="Loading…" />
+              : onDutyNow.toLocaleString()}
+          </div>
+          <div className="ic-stat-sub">Active responders</div>
+          <div className="ic-stat-accent ic-stat-accent--success" />
         </div>
-        <div className="col-span-12 sm:col-span-4">
-          <StatCard
-            label="Shifts this week"
-            tone="info"
-            icon={<CalenderIcon className="size-6" />}
-            loading={shiftsLoading}
-            value={shiftsThisWeek}
-          />
+
+        {/* Shifts this week */}
+        <div className="ic-stat-card">
+          <div className="ic-stat-label">Shifts this week</div>
+          <div className="ic-stat-value">
+            {shiftsLoading
+              ? <span className="ic-stat-skeleton" aria-label="Loading…" />
+              : shiftsThisWeek.toLocaleString()}
+          </div>
+          <div className="ic-stat-sub">Next 7 days</div>
+          <div className="ic-stat-accent ic-stat-accent--info" />
         </div>
-        <div className="col-span-12 sm:col-span-4">
-          <StatCard
-            label="Certifications expiring (30d)"
-            tone="warning"
-            icon={<AlertIcon className="size-6" />}
-            loading={certsLoading}
-            value={expiringCerts}
-          />
+
+        {/* Certifications expiring */}
+        <div className="ic-stat-card">
+          <div className="ic-stat-label">Certifications expiring (30d)</div>
+          <div className="ic-stat-value">
+            {certsLoading
+              ? <span className="ic-stat-skeleton" aria-label="Loading…" />
+              : expiringCerts.toLocaleString()}
+          </div>
+          <div className="ic-stat-sub">Needs renewal</div>
+          <div className="ic-stat-accent ic-stat-accent--warning" />
         </div>
       </div>
 

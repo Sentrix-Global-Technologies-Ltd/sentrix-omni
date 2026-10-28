@@ -25,4 +25,6 @@ export interface AuditFilters {
   subject_id?: string;
   /** Cursor (keyset) pagination token. */
   cursor?: string;
+  /** Records per page — passed as per_page to the API (default 15, max 100). */
+  per_page?: number;
 }

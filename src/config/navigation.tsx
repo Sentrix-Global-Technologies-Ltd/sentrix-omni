@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   AlertHexaIcon,
+  AlarmBellIcon,
   BoltIcon,
   BoxCubeIcon,
   BoxIconLine,
@@ -135,13 +136,6 @@ export const navigation: NavGroup[] = [
     title: "Monitoring",
     items: [
       {
-        key: "evidence",
-        label: "Evidence",
-        path: "/evidence",
-        icon: <FileIcon />,
-        access: { anyPermission: ["evidence.view"] },
-      },
-      {
         key: "intel",
         label: "Intel",
         path: "/intel",
@@ -226,6 +220,15 @@ export const navigation: NavGroup[] = [
         path: "/vision-guard/facility-map",
         icon: <MapPinIcon />,
         access: { anyPermission: ["hardware.view"] },
+      },
+      {
+        key: "vision-guard-detections",
+        label: "Detections",
+        path: "/vision-guard/detections",
+        icon: <AlarmBellIcon />,
+        // Gated on incidents.view — the same permission the backend
+        // OrganizationDetectionController::recent() requires.
+        access: { anyPermission: ["incidents.view"] },
       },
       {
         key: "vision-guard-ai-analytics",

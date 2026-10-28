@@ -6,7 +6,7 @@ import FilterBar from "../../../components/shared/FilterBar";
 import FilterText from "../../../components/shared/FilterText";
 import Pagination from "../../../components/ui/pagination/Pagination";
 import DashboardKpiCard from "../../dashboard/components/DashboardKpiCard";
-import MapView, { type MapMarker } from "../../../components/shared/MapView";
+import WorldChoroplethMap from "../../../components/shared/WorldChoroplethMap";
 import OrganizationsTable from "../components/OrganizationsTable";
 import { usePlatformOrganizations } from "../hooks/usePlatformOrganizations";
 import type { PlatformOrganization } from "../api/organizations.types";
@@ -18,17 +18,6 @@ interface PaginatorMeta {
   total?: number;
   from?: number;
   to?: number;
-}
-
-// Lagos, Nigeria — Sentrix's primary market; a reasonable default view before
-// any organization coordinates are known.
-const DEFAULT_CENTER: [number, number] = [6.5244, 3.3792];
-
-function subscriptionColor(status: string | null): string {
-  if (status === "active") return "#12b76a";
-  if (status === "trialing") return "#f79009";
-  if (status === "cancelled" || status === "canceled") return "#f04438";
-  return "#98a2b3";
 }
 
 /**
@@ -50,21 +39,6 @@ export default function OrganizationsDirectoryPage() {
   const meta = query.data?.meta as PaginatorMeta | undefined;
 
   const mapped = useMemo(() => organizations.filter((o) => o.lat != null && o.lng != null), [organizations]);
-
-  const markers = useMemo<MapMarker[]>(
-    () =>
-      mapped.map((o) => ({
-        id: o.id,
-        lat: o.lat as number,
-        lng: o.lng as number,
-        color: subscriptionColor(o.subscription_status),
-        label: `${o.name}${o.region ? ` — ${o.region}` : ""}`,
-      })),
-    [mapped],
-  );
-
-  const mapCenter: [number, number] =
-    mapped.length > 0 ? [mapped[0].lat as number, mapped[0].lng as number] : DEFAULT_CENTER;
 
   const goToDetail = (o: Pick<PlatformOrganization, "id">) => navigate(`/superadmin/organizations/${o.id}`);
 
@@ -132,13 +106,10 @@ export default function OrganizationsDirectoryPage() {
       </FilterBar>
 
       <div className="mb-6">
-        {mapped.length > 0 ? (
-          <MapView center={mapCenter} zoom={7} markers={markers} onMarkerClick={(id) => navigate(`/superadmin/organizations/${id}`)} />
-        ) : (
-          <div className="flex h-[300px] items-center justify-center rounded-2xl border border-gray-200 bg-white text-theme-sm text-gray-400 dark:border-gray-800 dark:bg-white/[0.03]">
-            No organizations with a resolved location yet.
-          </div>
-        )}
+        <WorldChoroplethMap
+          orgs={mapped.map((o) => ({ id: o.id, lat: o.lat as number, lng: o.lng as number }))}
+          onCountryClick={(iso) => navigate(`/superadmin/organizations?country=${iso}`)}
+        />
       </div>
 
       <OrganizationsTable

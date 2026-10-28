@@ -18,22 +18,28 @@ interface Props {
   /** Trigger button label (defaults to "New incident"). */
   triggerLabel?: string;
   triggerVariant?: "primary" | "outline";
+  /** Pre-populate the title field (e.g. from camera/zone context). */
+  initialTitle?: string;
+  /** Pre-populate the summary field. */
+  initialSummary?: string;
+  /** Extra className forwarded to the trigger Button (e.g. "w-full"). */
+  triggerClassName?: string;
 }
 
 /** Open a new incident. Navigates to the created incident on success. */
-export default function CreateIncidentButton({ emergencyId, triggerLabel, triggerVariant = "primary" }: Props) {
+export default function CreateIncidentButton({ emergencyId, triggerLabel, triggerVariant = "primary", initialTitle = "", initialSummary = "", triggerClassName }: Props) {
   const { create } = useIncidentMutations();
   const toast = useToast();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle);
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
-  const [summary, setSummary] = useState("");
+  const [summary, setSummary] = useState(initialSummary);
 
   const reset = () => {
-    setTitle("");
+    setTitle(initialTitle);
     setSeverity("medium");
-    setSummary("");
+    setSummary(initialSummary);
   };
 
   const submit = async () => {
@@ -57,6 +63,7 @@ export default function CreateIncidentButton({ emergencyId, triggerLabel, trigge
       <Button
         size="sm"
         variant={triggerVariant}
+        className={triggerClassName}
         onClick={() => {
           reset();
           setOpen(true);

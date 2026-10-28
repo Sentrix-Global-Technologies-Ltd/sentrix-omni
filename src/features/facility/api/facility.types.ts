@@ -7,6 +7,10 @@ export interface FacilityCameraPin {
   label: string;
   type: string;
   feed_status: FeedStatus;
+  /** null = unplaced on the facility map; 0–100 building-relative pct when placed. */
+  map_x: number | null;
+  /** null = unplaced on the facility map; 0–100 building-relative pct when placed. */
+  map_y: number | null;
 }
 
 export interface FacilityZone {
@@ -66,4 +70,35 @@ export interface CreateZonePayload {
   y: number;
   width: number;
   height: number;
+}
+
+export type UpdateZonePayload = Partial<CreateZonePayload>;
+
+
+/** Minimal camera shape returned by GET vision-guard/sources, projected to the
+ *  fields the Facility Map's Unplaced Cameras panel needs.  The backend's
+ *  CameraSourceResource already emits map_x/map_y on every response; this type
+ *  just makes those fields visible to the facility feature. */
+export interface AllOrgCamera {
+  id: string;
+  label: string;
+  type: string;
+  /** Freeform building name the registrar typed — matched against building.name
+   *  by the backend when rendering zone cameras, and by the unplaced-cameras
+   *  collector on the frontend. */
+  site: string | null;
+  feed_status: FeedStatus;
+  /** null = not yet placed on the facility map. */
+  map_x: number | null;
+  /** null = not yet placed on the facility map. */
+  map_y: number | null;
+}
+/** PATCH /vision-guard/camera-sources/{id} — map position and site/zone assignment. */
+export interface UpdateCameraPositionPayload {
+  map_x: number | null;
+  map_y: number | null;
+  /** Building name to persist on the camera record (used for FacilityMap grouping). */
+  site?: string | null;
+  /** Zone name to persist on the camera record (used for FacilityMap grouping). */
+  zone?: string | null;
 }

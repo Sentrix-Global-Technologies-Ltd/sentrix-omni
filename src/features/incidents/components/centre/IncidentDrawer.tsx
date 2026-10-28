@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { Link } from "react-router";
 import { useOrganization } from "../../../../context/OrganizationContext";
 import { useIncident } from "../../hooks/useIncident";
 import { useIncidentActions } from "../../hooks/useIncidentActions";
@@ -390,7 +391,7 @@ export default function IncidentDrawer({ incidentId, onClose }: IncidentDrawerPr
             <>
               {/* ── Metadata block ─────────────────────────────────────── */}
               <div className="ic-drawer-section ic-drawer-section--meta">
-                <DetailRow icon={<IconSite />}   label="Site"        value="—" />
+                <DetailRow icon={<IconSite />}   label="Site"        value={detail?.explanation?.camera?.site ?? "—"} />
                 <DetailRow
                   icon={<IconClock />}
                   label="Detected"
@@ -399,9 +400,9 @@ export default function IncidentDrawer({ incidentId, onClose }: IncidentDrawerPr
                 <DetailRow
                   icon={<IconUser />}
                   label="Assigned To"
-                  value={incident.assigned_to ?? "—"}
+                  value={incident.assignee_name ?? incident.assigned_to ?? "—"}
                 />
-                <DetailRow icon={<IconCamera />} label="Camera"      value="—" />
+                <DetailRow icon={<IconCamera />} label="Camera"      value={detail?.explanation?.camera?.label ?? "—"} />
                 {incident.summary && (
                   <DetailRow
                     icon={<IconDesc />}
@@ -435,6 +436,15 @@ export default function IncidentDrawer({ incidentId, onClose }: IncidentDrawerPr
         {/* ── Footer: two equal-width buttons ────────────────────────────── */}
         {incident && (
           <div className="ic-drawer-footer">
+            {/* View full details — navigate to the standalone Incident Detail page */}
+            <Link
+              to={`/incidents/${incidentId}`}
+              className="ic-footer-btn ic-footer-btn--details"
+              onClick={onClose}
+            >
+              View full details
+            </Link>
+
             {/* Add Note — disabled, pending backend */}
             <button
               type="button"
@@ -455,9 +465,11 @@ export default function IncidentDrawer({ incidentId, onClose }: IncidentDrawerPr
                     <button type="button" className="ic-take-action-item" disabled={!canInvestigate} onClick={() => handleActionSelect("investigate")}>
                       Start investigation
                     </button>
-                    <button type="button" className="ic-take-action-item" disabled={!canEscalate} onClick={() => handleActionSelect("escalate")}>
-                      Escalate
-                    </button>
+                    <Can permission="incidents.escalate">
+                      <button type="button" className="ic-take-action-item" disabled={!canEscalate} onClick={() => handleActionSelect("escalate")}>
+                        Escalate
+                      </button>
+                    </Can>
                     <button type="button" className="ic-take-action-item" disabled={!canResolve} onClick={() => handleActionSelect("resolve")}>
                       Mark resolved
                     </button>

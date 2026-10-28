@@ -1,112 +1,145 @@
 /**
- * Quick Incidents — right-rail incident list.
- * ⚠ SIMULATED DATA — static mock incidents for visual completeness only.
+ * Quick Incidents — right-rail incident list, wired to real incident data.
+ *
+ * Data source : GET /organizations/{org}/incidents?status=open&per_page=4
+ * Realtime    : useIncidentsRealtime() → invalidates on any incident event
+ * Location    : IncidentResource has no text location field (lat/lng only) → always "—"
  */
+import { useNavigate } from "react-router";
+import { useIncidents } from "../../incidents/hooks/useIncidents";
+import { useIncidentsRealtime } from "../../incidents/hooks/useIncidentsRealtime";
+import { relativeTime } from "../../../lib/format";
+import type {
+  Incident,
+  IncidentCentreFilters,
+  IncidentSeverity,
+} from "../../incidents/api/incidents.types";
 
-type Severity = "High" | "Medium" | "Low";
-type IconTone = "red" | "amber" | "blue";
+/* ── Severity → visual mapping ───────────────────────────────────────────── */
 
-// MOCK — simulated incidents matching the reference UI design
-const MOCK_INCIDENTS: {
-  id: string;
-  tone: IconTone;
-  title: string;
-  location: string;
-  severity: Severity;
-  time: string;
-}[] = [
-  { id: "m1", tone: "red",   title: "Perimeter Breach",     location: "North Gate - Building A", severity: "High",   time: "2 min ago"  },
-  { id: "m2", tone: "amber", title: "Loitering Detected",   location: "Parking Lot A",           severity: "Medium", time: "5 min ago"  },
-  { id: "m3", tone: "amber", title: "Unauthorized Access",  location: "East Entrance",           severity: "Medium", time: "8 min ago"  },
-  { id: "m4", tone: "blue",  title: "Vehicle Without Auth", location: "Loading Dock",            severity: "Low",    time: "15 min ago" },
-];
-
-/* ── Icons ────────────────────────────────────────────────────────────────── */
-function PerimeterIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 8h1a4 4 0 010 8h-1"/>
-      <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
-      <line x1="6" y1="1" x2="6" y2="4"/>
-      <line x1="10" y1="1" x2="10" y2="4"/>
-      <line x1="14" y1="1" x2="14" y2="4"/>
-    </svg>
-  );
-}
-function LoiteringIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="5" r="2.5"/>
-      <path d="M9 12l-2 5M15 12l2 5M9 12h6M11 12v5"/>
-    </svg>
-  );
-}
-function AccessIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <path d="M21 15l-5-5L5 21"/>
-    </svg>
-  );
-}
-function VehicleAuthIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="4"/>
-      <path d="M6 20v-1a6 6 0 0112 0v1"/>
-      <line x1="12" y1="14" x2="12" y2="17"/>
-    </svg>
-  );
-}
-
-function IncidentIcon({ id, tone }: { id: string; tone: IconTone }) {
-  const cls = `lm-incident-icon lm-incident-icon--${tone}`;
-  const icons: Record<string, JSX.Element> = {
-    m1: <PerimeterIcon />,
-    m2: <LoiteringIcon />,
-    m3: <AccessIcon />,
-    m4: <VehicleAuthIcon />,
-  };
-  return <span className={cls}>{icons[id]}</span>;
-}
-
-const SEVERITY_CLS: Record<Severity, string> = {
-  High:   "lm-severity--high",
-  Medium: "lm-severity--medium",
-  Low:    "lm-severity--low",
+/** Icon background/colour tone per severity level.
+ *  critical uses violet to stand visually apart from high (both urgent, but
+ *  critical must be unmistakably distinct at a glance). */
+const ICON_TONE: Record<IncidentSeverity, string> = {
+  critical: "violet",
+  high:     "red",
+  medium:   "amber",
+  low:      "blue",
 };
 
+/** Severity text colour class — lm-severity--critical added to live-monitoring.css. */
+const SEVERITY_CLS: Record<IncidentSeverity, string> = {
+  critical: "lm-severity--critical",
+  high:     "lm-severity--high",
+  medium:   "lm-severity--medium",
+  low:      "lm-severity--low",
+};
+
+/* ── Generic alert icon — one shape, tone varies by severity ─────────────── */
+function AlertIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+/* ── Single incident row ─────────────────────────────────────────────────── */
+function IncidentRow({ incident }: { incident: Incident }) {
+  const tone = ICON_TONE[incident.severity] ?? "blue";
+  const severityCls = SEVERITY_CLS[incident.severity] ?? "lm-severity--low";
+  const severityLabel =
+    incident.severity.charAt(0).toUpperCase() + incident.severity.slice(1);
+
+  return (
+    <div className="lm-incident-item">
+      <span className={`lm-incident-icon lm-incident-icon--${tone}`}>
+        <AlertIcon />
+      </span>
+
+      {/* Title + location (IncidentResource has no text location → always "—") */}
+      <div className="lm-incident-body">
+        <div className="lm-incident-title">{incident.title}</div>
+        <div className="lm-incident-sub">—</div>
+      </div>
+
+      {/* Severity badge + relative timestamp */}
+      <div className="lm-incident-right">
+        <span className={`lm-severity ${severityCls}`}>{severityLabel}</span>
+        <span className="lm-incident-time">{relativeTime(incident.opened_at)}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Stable filter object — defined outside the component to avoid re-renders */
+const QUICK_FILTERS: IncidentCentreFilters = { status: "open", per_page: 4 };
+
+/* ── Component ───────────────────────────────────────────────────────────── */
 export default function LiveQuickIncidents() {
+  const navigate = useNavigate();
+
+  // useIncidents accepts IncidentFilters; IncidentCentreFilters is a structural
+  // subtype so this assignment is type-safe.
+  const { data, isLoading, isError, refetch } = useIncidents(QUICK_FILTERS);
+
+  // Subscribe to realtime incident events — invalidates the list query on any change.
+  useIncidentsRealtime();
+
+  const incidents = data?.data;
+
   return (
     <div className="lm-incidents-card">
       <div className="lm-card-header">
         <span className="lm-card-title">Quick Incidents</span>
-        {/* View all — non-functional placeholder matching the reference */}
-        <button className="lm-view-all-btn" aria-label="View all incidents">
+        <button
+          className="lm-view-all-btn"
+          aria-label="View all incidents"
+          onClick={() => navigate("/incidents")}
+        >
           View all
         </button>
       </div>
 
-      {MOCK_INCIDENTS.map((inc) => (
-        <div key={inc.id} className="lm-incident-item">
-          <IncidentIcon id={inc.id} tone={inc.tone} />
-
-          {/* Title + location */}
-          <div className="lm-incident-body">
-            <div className="lm-incident-title">{inc.title}</div>
-            <div className="lm-incident-sub">{inc.location}</div>
-          </div>
-
-          {/* Severity + time — right column */}
-          <div className="lm-incident-right">
-            <span className={`lm-severity ${SEVERITY_CLS[inc.severity]}`}>
-              {inc.severity}
-            </span>
-            <span className="lm-incident-time">{inc.time}</span>
-          </div>
+      {/* Loading */}
+      {isLoading && (
+        <div className="lm-loading" role="status" aria-label="Loading incidents">
+          Loading…
         </div>
-      ))}
+      )}
+
+      {/* Error — never silently fall back to fabricated data */}
+      {isError && !isLoading && (
+        <div className="lm-error-box" role="alert">
+          <span>Failed to load incidents</span>
+          <button className="lm-retry-btn" onClick={() => void refetch()}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Data resolved */}
+      {!isLoading && !isError && incidents != null && (
+        incidents.length === 0 ? (
+          <div className="lm-loading">No open incidents</div>
+        ) : (
+          incidents.map((incident) => (
+            <IncidentRow key={incident.id} incident={incident} />
+          ))
+        )
+      )}
     </div>
   );
 }

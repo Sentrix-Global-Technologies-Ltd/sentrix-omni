@@ -16,6 +16,8 @@ interface ConfirmActionButtonProps {
   triggerVariant?: "primary" | "outline";
   triggerSize?: "sm" | "md";
   disabled?: boolean;
+  /** Extra classes forwarded to the trigger button element. */
+  triggerClassName?: string;
   /** Toast on success. */
   successMessage?: string;
   /** The action — typically a mutation's mutateAsync(). Must return a promise. */
@@ -40,6 +42,7 @@ export default function ConfirmActionButton({
   triggerVariant = "outline",
   triggerSize = "sm",
   disabled,
+  triggerClassName,
   successMessage,
   onConfirm,
   onOpen,
@@ -69,7 +72,7 @@ export default function ConfirmActionButton({
 
   return (
     <>
-      <Button size={triggerSize} variant={triggerVariant} disabled={disabled} onClick={handleOpen}>
+      <Button size={triggerSize} variant={triggerVariant} disabled={disabled} onClick={handleOpen} className={triggerClassName}>
         {label}
       </Button>
       <ConfirmDialog

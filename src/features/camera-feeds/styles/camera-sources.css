@@ -13,7 +13,7 @@
   .cs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .cs-kpi-grid { grid-template-columns: 1fr; }
+  .cs-kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 .cs-kpi-card {
@@ -25,6 +25,8 @@
   background: #fff;
   padding: 1.25rem 1.5rem;
   transition: border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
 }
 .cs-kpi-card:hover {
   border-color: var(--color-brand-300, #6fa8ff);
@@ -295,7 +297,7 @@
 }
 .cs-drawer {
   position: fixed;
-  top: 4.75rem; /* sits below the sticky AppHeader (py-4 + h-11 = 4.75rem on lg) */
+  top: 4rem; /* mobile header: py-3 + h-10 */
   right: 0;
   bottom: 0;
   z-index: 50;
@@ -308,6 +310,10 @@
   animation: cs-slide-in 0.2s ease;
 }
 :is(.dark *) .cs-drawer { background: var(--color-gray-900, #111827); }
+
+@media (min-width: 1024px) {
+  .cs-drawer { top: 4.75rem; /* desktop header: py-4 + h-11 */ }
+}
 
 .cs-drawer-header {
   display: flex;
@@ -377,11 +383,6 @@
 
 /* ── Additional-filters popover ──────────────────────────────────── */
 .cs-filter-popover {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  z-index: 200;
-  width: 260px;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -444,4 +445,46 @@
 @keyframes cs-slide-in {
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
+}
+
+/* ── Bottom accent bar (matches Incidents Centre pattern) ────────────────── */
+.cs-kpi-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0 0 1rem 1rem;
+}
+.cs-kpi-accent--teal   { background: #0d9488; }
+.cs-kpi-accent--green  { background: #16a34a; }
+.cs-kpi-accent--orange { background: #ea580c; }
+.cs-kpi-accent--gray   { background: #6b7280; }
+
+/* ── Filter row responsive behaviour ─────────────────────── */
+/* Allow filters to wrap onto a second line on narrow viewports */
+.cs-filter-row {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  /* Search box takes the full width on the first line */
+  .cs-filter-search {
+    flex: 1 1 100%;
+  }
+  /* Each select becomes half-width (two per row) */
+  .cs-filter-select {
+    flex: 1 1 calc(50% - 0.3125rem);
+    min-width: 0;
+  }
+  .cs-filter-btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stack every control full-width on very small phones */
+  .cs-filter-select {
+    flex: 1 1 100%;
+  }
 }

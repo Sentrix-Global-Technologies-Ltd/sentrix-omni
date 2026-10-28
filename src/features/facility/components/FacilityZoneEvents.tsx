@@ -1,9 +1,24 @@
-import { MOCK_ZONE_EVENTS } from "../data/facilityMockData";
-import type { MockZoneEvent } from "../data/facilityMockData";
+import { useNavigate } from "react-router";
+import type { RecentZoneEvent, FacilityBuilding } from "../api/facility.types";
+
+// ── Severity → icon kind mapping ─────────────────────────────────────────────
+
+type IconKind = "alert-high" | "alert-medium" | "alert-low" | "info" | "check";
+
+function severityToIconKind(severity: RecentZoneEvent["severity"]): IconKind {
+  switch (severity) {
+    case "critical":
+    case "high":     return "alert-high";
+    case "medium":   return "alert-medium";
+    case "low":      return "alert-low";
+    case "info":     return "info";
+    default:         return "info";
+  }
+}
 
 // ── Event icon ───────────────────────────────────────────────────────────────
 
-function EventIcon({ kind }: { kind: MockZoneEvent["iconKind"] }) {
+function EventIcon({ kind }: { kind: IconKind }) {
   const p = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.75, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   switch (kind) {
     case "alert-high":
@@ -17,50 +32,80 @@ function EventIcon({ kind }: { kind: MockZoneEvent["iconKind"] }) {
   }
 }
 
-function iconClass(kind: MockZoneEvent["iconKind"]): string {
+function iconClass(kind: IconKind): string {
   switch (kind) {
-    case "alert-high": return "fm-event-icon--high";
+    case "alert-high":   return "fm-event-icon--high";
     case "alert-medium": return "fm-event-icon--medium";
     case "alert-low":
-    case "info": return "fm-event-icon--low";
-    case "check": return "fm-event-icon--check";
+    case "info":         return "fm-event-icon--low";
+    case "check":        return "fm-event-icon--check";
   }
+}
+
+// ── Relative time formatting ──────────────────────────────────────────────────
+
+function formatRelativeTime(receivedAt: string): string {
+  const diff = Math.floor((Date.now() - new Date(receivedAt).getTime()) / 1000);
+  if (diff < 60)   return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
+  events: RecentZoneEvent[];
+  buildings: FacilityBuilding[];
   onSelectBuilding: (id: string) => void;
 }
 
-export default function FacilityZoneEvents({ onSelectBuilding }: Props) {
+export default function FacilityZoneEvents({ events, buildings, onSelectBuilding }: Props) {
+  const navigate = useNavigate();
   return (
     <div className="fm-panel">
       <div className="fm-events-hd">
         <span className="fm-events-title">Recent Zone Events</span>
-        <button className="fm-view-all">View all</button>
+        <button className="fm-view-all" onClick={() => navigate("/vision-guard/detections")}>View all</button>
       </div>
 
       <div className="fm-event-list">
-        {MOCK_ZONE_EVENTS.map((evt) => (
-          <div
-            key={evt.id}
-            className="fm-event-item"
-            onClick={() => evt.buildingId && onSelectBuilding(evt.buildingId)}
-          >
-            <div className={`fm-event-icon ${iconClass(evt.iconKind)}`}>
-              <EventIcon kind={evt.iconKind} />
-            </div>
-            <div className="fm-event-body">
-              <div className="fm-event-title">{evt.title}</div>
-              <div className="fm-event-location">{evt.location}</div>
-            </div>
-            <div className="fm-event-right">
-              <span className={`fm-severity-badge fm-severity--${evt.severity}`}>{evt.severity}</span>
-              <span className="fm-event-time">{evt.time}</span>
-            </div>
+        {events.length === 0 ? (
+          <div style={{ padding: "1rem 0.875rem", fontSize: "0.8125rem", color: "#94a3b8", textAlign: "center" }}>
+            No recent events.
           </div>
-        ))}
+        ) : (
+          events.map((evt) => {
+            const kind = severityToIconKind(evt.severity);
+            // Resolve building ID from evt.site name
+            const buildingId = evt.site
+              ? buildings.find((b) => b.name === evt.site)?.id ?? null
+              : null;
+
+            const location = [evt.site, evt.zone].filter(Boolean).join(" · ") || "Unknown location";
+
+            return (
+              <div
+                key={evt.id}
+                className="fm-event-item"
+                onClick={() => buildingId && onSelectBuilding(buildingId)}
+                style={{ cursor: buildingId ? "pointer" : "default" }}
+              >
+                <div className={`fm-event-icon ${iconClass(kind)}`}>
+                  <EventIcon kind={kind} />
+                </div>
+                <div className="fm-event-body">
+                  <div className="fm-event-title">{evt.summary ?? `${evt.type ?? "Event"}`}</div>
+                  <div className="fm-event-location">{location}</div>
+                </div>
+                <div className="fm-event-right">
+                  <span className={`fm-severity-badge fm-severity--${evt.severity}`}>{evt.severity}</span>
+                  <span className="fm-event-time">{formatRelativeTime(evt.received_at)}</span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

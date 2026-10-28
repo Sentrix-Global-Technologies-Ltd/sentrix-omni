@@ -12,7 +12,7 @@ const fieldClass =
 const SEVERITIES: IncidentSeverity[] = ["low", "medium", "high", "critical"];
 
 /** Edit an incident's title, severity, and summary. Gate with <Can incidents.update>. */
-export default function EditIncidentButton({ incident }: { incident: Incident }) {
+export default function EditIncidentButton({ incident, triggerClassName }: { incident: Incident; triggerClassName?: string }) {
   const { update } = useIncidentActions(incident.id);
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export default function EditIncidentButton({ incident }: { incident: Incident })
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={openModal}>
+      <Button size="sm" variant="outline" onClick={openModal} className={triggerClassName}>
         Edit
       </Button>
 

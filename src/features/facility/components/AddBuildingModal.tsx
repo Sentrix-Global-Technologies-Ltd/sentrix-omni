@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
 import { useToast } from "../../../components/shared/toast";
@@ -7,9 +7,22 @@ import { useFacilityActions } from "../hooks/useFacilityMap";
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
 
+export interface DrawRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
+  /**
+   * When provided, the coordinate fields are pre-populated with the values
+   * from a draw gesture. The user still enters the building name manually.
+   * Omit or pass undefined to show the default placeholder values.
+   */
+  initialRect?: DrawRect;
 }
 
 /**
@@ -18,7 +31,7 @@ interface Props {
  * in this pass, just direct numeric placement (still a real, persisted
  * layout — just a simpler input method than a full drag/resize editor).
  */
-export default function AddBuildingModal({ open, onClose }: Props) {
+export default function AddBuildingModal({ open, onClose, initialRect }: Props) {
   const [name, setName] = useState("");
   const [x, setX] = useState(10);
   const [y, setY] = useState(10);
@@ -26,6 +39,16 @@ export default function AddBuildingModal({ open, onClose }: Props) {
   const [height, setHeight] = useState(25);
   const { createBuilding } = useFacilityActions();
   const toast = useToast();
+
+  // Sync coordinate fields from a draw gesture whenever the modal opens.
+  useEffect(() => {
+    if (open && initialRect) {
+      setX(Math.round(initialRect.x));
+      setY(Math.round(initialRect.y));
+      setWidth(Math.round(initialRect.width));
+      setHeight(Math.round(initialRect.height));
+    }
+  }, [open, initialRect]);
 
   const reset = () => {
     setName("");
@@ -54,7 +77,9 @@ export default function AddBuildingModal({ open, onClose }: Props) {
     <Modal isOpen={open} onClose={close} className="mx-4 w-full max-w-md p-6">
       <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">Add Building</h3>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Position and size are percentages of the map canvas (0-100).
+        {initialRect
+          ? "Coordinates prefilled from your drawn rectangle. Adjust if needed."
+          : "Position and size are percentages of the map canvas (0-100)."}
       </p>
       <div className="mt-4 space-y-3">
         <div>

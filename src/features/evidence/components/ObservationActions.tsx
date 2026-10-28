@@ -22,7 +22,7 @@ export default function ObservationActions({ observation, onViewCustody }: Props
           Custody
         </Button>
       )}
-      <Can permission="evidence.view">
+      <Can permission="evidence.hold">
         <ConfirmActionButton
           label={observation.bookmarked ? "Unbookmark" : "Bookmark"}
           title={observation.bookmarked ? "Remove bookmark?" : "Bookmark observation?"}

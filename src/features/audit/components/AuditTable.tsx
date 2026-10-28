@@ -49,6 +49,7 @@ export default function AuditTable({ logs, isLoading, error, onRetry }: Props) {
     {
       key: "action",
       header: "Action",
+      className: "whitespace-nowrap",
       render: (l) => (
         <StatusBadge tone={actionTone(l.action)}>
           {humanize(l.action)}
@@ -58,6 +59,7 @@ export default function AuditTable({ logs, isLoading, error, onRetry }: Props) {
     {
       key: "actor",
       header: "Actor",
+      className: "whitespace-nowrap",
       render: (l) => {
         const name = l.actor_name ?? null;
         const short = l.actor_id ? l.actor_id.slice(0, 8) : null;
@@ -78,8 +80,6 @@ export default function AuditTable({ logs, isLoading, error, onRetry }: Props) {
     {
       key: "subject",
       header: "Subject",
-      headerClassName: "hidden sm:table-cell",
-      className: "hidden sm:table-cell",
       render: (l) =>
         l.subject ? (
           <div className="flex items-center gap-2">
@@ -95,8 +95,7 @@ export default function AuditTable({ logs, isLoading, error, onRetry }: Props) {
     {
       key: "ip",
       header: "IP",
-      headerClassName: "hidden md:table-cell",
-      className: "hidden md:table-cell",
+      className: "whitespace-nowrap",
       render: (l) => (
         <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
           {l.ip_address ?? "—"}
@@ -106,8 +105,6 @@ export default function AuditTable({ logs, isLoading, error, onRetry }: Props) {
     {
       key: "time",
       header: "When",
-      headerClassName: "hidden lg:table-cell",
-      className: "hidden lg:table-cell",
       render: (l) => (
         <div title={formatDateTime(l.created_at)}>
           <p className="text-sm text-gray-700 dark:text-gray-300">

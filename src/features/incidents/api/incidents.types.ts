@@ -15,6 +15,7 @@ export interface Incident {
   emergency_id: string | null;
   opened_by: string | null;
   assigned_to: string | null;
+  assignee_name: string | null;
   status: IncidentStatus;
   severity: IncidentSeverity;
   title: string;
@@ -42,6 +43,9 @@ export interface TimelineEntry {
   at: string | null;
   type: string;
   source: string;
+  /** Name of the user who performed the action; null for system-generated entries.
+   *  Populated by the backend via an eager-loaded actor relationship.  */
+  actor_name?: string | null;
   payload: Record<string, unknown>;
 }
 
@@ -95,11 +99,70 @@ export interface Assignment {
   updated_at: string | null;
 }
 
+export interface IncidentExplanationCamera {
+  id: string;
+  label: string;
+  site: string | null;
+  zone: string | null;
+}
+
+export interface IncidentExplanationDetection {
+  label: string | null;
+  confidence: number | null;
+}
+
+export interface IncidentExplanationObserved {
+  description: string | null;
+  detections: IncidentExplanationDetection[];
+  scene_risk: string | null;
+}
+
+/** Provider/model metadata for the AI frame analysis — from DetectionExplanationResource::ANALYSIS_FIELDS. */
+export interface IncidentExplanationAnalysis {
+  provider: string | null;
+  model: string | null;
+  frame_hash: string | null;
+  content_type: string | null;
+  analyzed_at: string | null;
+  latency_ms: number | null;
+  attempts: number | null;
+}
+
+/** DecisionEngine assessment record — from DetectionExplanationResource::ASSESSMENT_FIELDS. */
+export interface IncidentExplanationAssessment {
+  basis_label: string | null;
+  basis_confidence: number | null;
+  confidence_factor: number | null;
+  base_risk: number | null;
+  risk_score: number | null;
+  intrinsic_severity: string | null;
+  banded_severity: string | null;
+  severity: string | null;
+  matched_rule: string | null;
+  matched_term: string | null;
+  trigger_threshold: number | null;
+  triggered: boolean | null;
+  reason: string | null;
+}
+
+export interface IncidentExplanation {
+  detection_event_id: string;
+  received_at: string | null;
+  camera: IncidentExplanationCamera | null;
+  /** Scene description and per-detection labels — from DetectionExplanationResource. */
+  observed: IncidentExplanationObserved | null;
+  /** Provider/model metadata for the AI analysis call. */
+  analysis: IncidentExplanationAnalysis | null;
+  /** DecisionEngine assessment that determined this detection was actionable. */
+  assessment: IncidentExplanationAssessment | null;
+}
+
 /** `GET incidents/{id}` aggregate. */
 export interface IncidentDetail {
   incident: Incident;
   assignment: Assignment | null;
   timeline: TimelineEntry[];
+  explanation: IncidentExplanation | null;
 }
 
 export interface IncidentFilters {

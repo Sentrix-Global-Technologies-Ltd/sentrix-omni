@@ -9,7 +9,10 @@ const base = (orgId: string) => `organizations/${orgId}/detections`;
 export const detectionsApi = {
   recent(orgId: string, filters: DetectionFilters): Promise<ApiResult<DetectionEvent[]>> {
     return apiClient.get<DetectionEvent[]>(`${base(orgId)}/recent`, {
-      query: { limit: filters.limit },
+      query: {
+        limit: filters.limit,
+        ...(filters.triggered !== undefined && { triggered: filters.triggered }),
+      },
     });
   },
 };

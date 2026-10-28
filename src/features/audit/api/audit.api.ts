@@ -12,6 +12,7 @@ export const auditApi = {
         subject_type: filters.subject_type || undefined,
         subject_id: filters.subject_id || undefined,
         cursor: filters.cursor || undefined,
+        per_page: filters.per_page ?? undefined,
       },
     });
   },

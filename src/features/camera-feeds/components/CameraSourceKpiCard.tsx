@@ -1,3 +1,4 @@
+import type React from "react";
 interface Props {
   label: string;
   value: number | string;
@@ -25,6 +26,7 @@ export default function CameraSourceKpiCard({
           <div className="cs-kpi-trend cs-kpi-trend--flat">{trend}</div>
         )}
       </div>
+      <div className={`cs-kpi-accent cs-kpi-accent--${tone}`} />
     </div>
   );
 }

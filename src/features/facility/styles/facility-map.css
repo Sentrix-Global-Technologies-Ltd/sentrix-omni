@@ -661,3 +661,281 @@
 /* Footer tighter */
 .fm-location-footer { padding: 0.375rem 0.875rem 0.5rem !important; }
 .fm-location-view-btn { padding: 0.4375rem !important; font-size: 0.75rem !important; }
+
+/* Canvas state overlays ----------------------------------------------------- */
+.fm-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  background: rgba(255,255,255,0.72);
+  border-radius: 12px;
+}
+:is(.dark *) .fm-canvas-overlay {
+  background: rgba(0,0,0,0.52);
+}
+
+.fm-canvas-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: var(--color-gray-600, #4b5563);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  text-align: center;
+}
+:is(.dark *) .fm-canvas-state-box {
+  background: #1e2d3d;
+  border-color: var(--color-gray-700, #374151);
+  color: rgba(255,255,255,0.72);
+}
+
+@keyframes fm-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Configuration mode toolbar ─────────────────────────────────────────────── */
+.fm-config-toolbar {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3125rem 0.875rem;
+  background: rgba(99, 102, 241, 0.92);
+  border: 1px solid rgba(99, 102, 241, 0.6);
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+:is(.dark *) .fm-config-toolbar {
+  background: rgba(79, 82, 221, 0.94);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+.fm-config-badge {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+/* ── Edit draft save/cancel bar (Batch 2-D) ─────────────────────────────────── */
+.fm-edit-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  margin-bottom: 0.5rem;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+:is(.dark *) .fm-edit-save-bar {
+  background: rgba(79, 82, 221, 0.10);
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+.fm-edit-save-info {
+  font-size: 0.8125rem;
+  color: var(--color-gray-700, #374151);
+  flex: 1;
+  min-width: 0;
+}
+:is(.dark *) .fm-edit-save-info { color: rgba(255,255,255,0.82); }
+
+.fm-edit-error {
+  color: #ef4444;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+:is(.dark *) .fm-edit-error { color: #f87171; }
+
+.fm-edit-save-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.fm-edit-cancel-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-gray-300, #d1d5db);
+  background: #fff;
+  color: var(--color-gray-700, #374151);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1.4;
+}
+.fm-edit-cancel-btn:hover:not(:disabled) { background: var(--color-gray-50, #f9fafb); }
+.fm-edit-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+:is(.dark *) .fm-edit-cancel-btn {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--color-gray-600, #4b5563);
+  color: rgba(255,255,255,0.82);
+}
+:is(.dark *) .fm-edit-cancel-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.10);
+}
+
+.fm-edit-save-btn {
+  padding: 0.375rem 0.875rem;
+  border-radius: 6px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1.4;
+}
+.fm-edit-save-btn:hover:not(:disabled) { background: #4f46e5; }
+.fm-edit-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Unplaced cameras sidebar (Phase 3) ──────────────────────────────────── */
+.fm-unplaced-panel {
+  position: absolute;
+  bottom: 48px;
+  left: 12px;
+  z-index: 20;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 180px;
+  max-width: 220px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  pointer-events: auto;
+}
+:is(.dark *) .fm-unplaced-panel {
+  background: #0f1e2e;
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.40);
+}
+.fm-unplaced-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 3px;
+}
+.fm-unplaced-hint {
+  font-size: 0.71rem;
+  color: var(--color-text-secondary, #94a3b8);
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+.fm-unplaced-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.fm-unplaced-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-raised, #f8fafc);
+  cursor: grab;
+  user-select: none;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.fm-unplaced-chip:hover {
+  background: #eff6ff;
+  box-shadow: 0 1px 4px rgba(99,102,241,0.12);
+}
+.fm-unplaced-chip--dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+:is(.dark *) .fm-unplaced-chip {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
+}
+:is(.dark *) .fm-unplaced-chip:hover {
+  background: rgba(99,102,241,0.14);
+}
+.fm-unplaced-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.fm-unplaced-label {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:is(.dark *) .fm-unplaced-label { color: rgba(255,255,255,0.88); }
+.fm-unplaced-building {
+  font-size: 0.68rem;
+  color: var(--color-text-secondary, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+/* ── Camera placement error banner ───────────────────────────── */
+.fm-place-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: #b91c1c;
+  font-weight: 500;
+}
+:is(.dark *) .fm-place-error {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.35);
+  color: #f87171;
+}
+.fm-place-error-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 0.875rem;
+  line-height: 1;
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  opacity: 0.7;
+}
+.fm-place-error-dismiss:hover { opacity: 1; }

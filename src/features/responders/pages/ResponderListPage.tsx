@@ -10,6 +10,7 @@ import RegisterResponderButton from "../components/RegisterResponderButton";
 import { useResponders } from "../hooks/useResponders";
 import { useRespondersRealtime } from "../hooks/useRespondersRealtime";
 import type { Responder, ResponderFilters as Filters } from "../api/responders.types";
+import "../../incidents/styles/incidents-centre.css";
 
 interface PaginatorMeta {
   current_page?: number;

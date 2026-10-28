@@ -3,14 +3,19 @@ import PageMeta from "../../../components/common/PageMeta";
 import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator";
 import { useCameraFeeds } from "../hooks/useCameraFeeds";
 import LiveCameraGrid, { type GridLayout } from "../components/LiveCameraGrid";
-import LiveCameraBrowser from "../components/LiveCameraBrowser";
-import LiveCameraDetails from "../components/LiveCameraDetails";
-import LiveQuickIncidents from "../components/LiveQuickIncidents";
 import LiveAiTimeline from "../components/LiveAiTimeline";
 import type { CameraSource } from "../api/camera-feeds.types";
 import "../styles/live-monitoring.css";
 
 /* ── Inline SVG icons — no lucide-react ────────────────────────────────── */
+function IconList() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6" strokeWidth="2.5"/><line x1="3" y1="12" x2="3.01" y2="12" strokeWidth="2.5"/><line x1="3" y1="18" x2="3.01" y2="18" strokeWidth="2.5"/>
+    </svg>
+  );
+}
 function IconGrid1() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,20 +38,29 @@ function IconGrid4() {
     </svg>
   );
 }
-function IconGrid9() {
+function IconGrid6() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3"  width="5" height="5" rx="0.5"/><rect x="9.5" y="3"  width="5" height="5" rx="0.5"/><rect x="16" y="3"  width="5" height="5" rx="0.5"/>
-      <rect x="3" y="9.5" width="5" height="5" rx="0.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/><rect x="16" y="9.5" width="5" height="5" rx="0.5"/>
-      <rect x="3" y="16" width="5" height="5" rx="0.5"/><rect x="9.5" y="16" width="5" height="5" rx="0.5"/><rect x="16" y="16" width="5" height="5" rx="0.5"/>
+      <rect x="3"  y="3"  width="5" height="8" rx="0.75"/>
+      <rect x="9.5" y="3"  width="5" height="8" rx="0.75"/>
+      <rect x="16" y="3"  width="5" height="8" rx="0.75"/>
+      <rect x="3"  y="13" width="5" height="8" rx="0.75"/>
+      <rect x="9.5" y="13" width="5" height="8" rx="0.75"/>
+      <rect x="16" y="13" width="5" height="8" rx="0.75"/>
     </svg>
   );
 }
-function IconList() {
+function IconGrid8() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-      <line x1="3" y1="6" x2="3.01" y2="6" strokeWidth="2.5"/><line x1="3" y1="12" x2="3.01" y2="12" strokeWidth="2.5"/><line x1="3" y1="18" x2="3.01" y2="18" strokeWidth="2.5"/>
+      <rect x="2"   y="3"  width="4.5" height="8" rx="0.75"/>
+      <rect x="7.5" y="3"  width="4.5" height="8" rx="0.75"/>
+      <rect x="13"  y="3"  width="4.5" height="8" rx="0.75"/>
+      <rect x="18.5" y="3"  width="3.5" height="8" rx="0.75"/>
+      <rect x="2"   y="13" width="4.5" height="8" rx="0.75"/>
+      <rect x="7.5" y="13" width="4.5" height="8" rx="0.75"/>
+      <rect x="13"  y="13" width="4.5" height="8" rx="0.75"/>
+      <rect x="18.5" y="13" width="3.5" height="8" rx="0.75"/>
     </svg>
   );
 }
@@ -61,7 +75,7 @@ function IconRefresh({ spinning }: { spinning: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ transition: "transform 0.5s", transform: spinning ? "rotate(360deg)" : "none", animation: spinning ? "lm-spin 0.8s linear infinite" : "none" }}
+      className={spinning ? "lm-refresh-icon-spinning" : undefined}
     >
       <polyline points="23 4 23 10 17 10"/>
       <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
@@ -70,30 +84,30 @@ function IconRefresh({ spinning }: { spinning: boolean }) {
 }
 
 const LAYOUTS: { value: GridLayout; Icon: React.ComponentType; label: string }[] = [
-  { value: 1, Icon: IconGrid1, label: "1 camera" },
-  { value: 2, Icon: IconGrid2, label: "2 cameras" },
-  { value: 4, Icon: IconGrid4, label: "4 cameras" },
-  { value: 9, Icon: IconGrid9, label: "9 cameras" },
+  { value: "list", Icon: IconList,  label: "List view" },
+  { value: 1,      Icon: IconGrid1, label: "Single camera" },
+  { value: 2,      Icon: IconGrid2, label: "2-camera grid" },
+  { value: 4,      Icon: IconGrid4, label: "4-camera grid" },
+  { value: 6,      Icon: IconGrid6, label: "6-camera grid" },
+  { value: 8,      Icon: IconGrid8, label: "8-camera grid" },
 ];
 
 /**
  * Live Monitoring — real-time camera wall.
  *
- * Uses real useCameraFeeds data (polls every 5 s) and useAuthenticatedImage
- * for private frame URLs. Mock panels (Quick Incidents, AI Timeline) are
- * explicitly labeled SIMULATED in the UI.
+ * Right sidebar removed; main area now fills full width.
+ * Layout modes: list | 1 | 2 | 4 | 6 | 8.
+ * Refresh triggers a real useCameraFeeds refetch.
  */
 export default function LiveMonitoringPage() {
   const [site, setSite] = useState("");
   const [layout, setLayout] = useState<GridLayout>(4);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showBrowser, setShowBrowser] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const query = useCameraFeeds({ site });
   const sources = useMemo(() => query.data?.data ?? [], [query.data]);
 
-  // Unique sites for site filter (derived from loaded page)
+  // Unique sites for site filter
   const siteOptions = useMemo(() => {
     const seen = new Set<string>();
     for (const s of sources) {
@@ -102,26 +116,20 @@ export default function LiveMonitoringPage() {
     return Array.from(seen);
   }, [sources]);
 
-  const selectedSource: CameraSource | null =
-    selectedId ? (sources.find((s) => s.id === selectedId) ?? null) : null;
-
-  const handleSelect = (source: CameraSource) => {
-    setSelectedId((prev) => (prev === source.id ? null : source.id));
-  };
-
-  const handleFullscreen = (source: CameraSource) => {
-    // Fallback when tile's own requestFullscreen isn't available
-    setSelectedId(source.id);
-  };
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    if (refreshing) return;
     setRefreshing(true);
-    void query.refetch().finally(() => {
+    try {
+      await query.refetch();
+    } finally {
       setTimeout(() => setRefreshing(false), 800);
-    });
+    }
   };
 
-  // The indicator is "connected" if the last query succeeded (data is present)
+  // No-op handlers kept for LiveCameraGrid API compatibility
+  const handleSelect = (_source: CameraSource) => { /* selection no longer drives a sidebar */ };
+  const handleFullscreen = (_source: CameraSource) => { /* tile handles its own fullscreen */ };
+
   const isLive = !query.isError && !query.isLoading && Boolean(query.data);
 
   return (
@@ -131,10 +139,9 @@ export default function LiveMonitoringPage() {
         description="Real-time camera feeds across your sites"
       />
 
-      {/* Toolbar — breadcrumb + controls in one row */}
+      {/* Toolbar */}
       <div className="lm-toolbar">
         <div className="lm-toolbar-left">
-          {/* Breadcrumb-style title (same visual weight as other pages) */}
           <span className="lm-toolbar-title">Vision Guard</span>
           <span style={{ color: "var(--color-gray-400)", fontSize: "0.875rem" }}>›</span>
           <span className="lm-toolbar-title">Live Monitoring</span>
@@ -157,21 +164,10 @@ export default function LiveMonitoringPage() {
             </select>
           )}
 
-          {/* Camera browser toggle */}
-          <button
-            className={`lm-layout-btn${showBrowser ? " active" : ""}`}
-            onClick={() => setShowBrowser((v) => !v)}
-            title="Camera browser"
-            aria-pressed={showBrowser}
-            aria-label="Toggle camera browser"
-          >
-            <IconList />
-          </button>
-
           {/* Layout selectors */}
           {LAYOUTS.map(({ value, Icon, label }) => (
             <button
-              key={value}
+              key={String(value)}
               className={`lm-layout-btn${layout === value ? " active" : ""}`}
               onClick={() => setLayout(value)}
               title={label}
@@ -185,7 +181,7 @@ export default function LiveMonitoringPage() {
           {/* Refresh — triggers real useCameraFeeds refetch */}
           <button
             className={`lm-refresh-btn${refreshing ? " spinning" : ""}`}
-            onClick={handleRefresh}
+            onClick={() => void handleRefresh()}
             disabled={refreshing}
             aria-label="Refresh camera feeds"
           >
@@ -195,43 +191,22 @@ export default function LiveMonitoringPage() {
         </div>
       </div>
 
-      {/* Main workspace — camera grid + right rail */}
-      <div className="lm-workspace">
-        {/* Left: camera grid area with optional browser overlay */}
-        <div className="lm-browser-wrap">
-          {showBrowser && (
-            <LiveCameraBrowser
-              sources={sources}
-              selectedId={selectedId}
-              onSelect={handleSelect}
-              onClose={() => setShowBrowser(false)}
-            />
-          )}
-          <LiveCameraGrid
-            sources={sources}
-            layout={layout}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            onFullscreen={handleFullscreen}
-            showBrowser={showBrowser}
-            isLoading={query.isLoading}
-            error={query.error}
-            onRetry={() => void query.refetch()}
-          />
-          {/* AI Detection Timeline — SIMULATED — constrained to camera-grid column width */}
-          <LiveAiTimeline />
-        </div>
+      {/* Main workspace — full width, no right rail */}
+      <div className="lm-workspace-single">
+        <LiveCameraGrid
+          sources={sources}
+          layout={layout}
+          selectedId={null}
+          onSelect={handleSelect}
+          onFullscreen={handleFullscreen}
+          isLoading={query.isLoading}
+          error={query.error}
+          onRetry={() => void query.refetch()}
+        />
 
-        {/* Right rail */}
-        <div className="lm-right-rail">
-          {/* Selected camera details (real API data) */}
-          <LiveCameraDetails source={selectedSource} />
-
-          {/* Quick Incidents — SIMULATED, labeled in UI */}
-          <LiveQuickIncidents />
-        </div>
+        {/* AI Detection Timeline */}
+        <LiveAiTimeline cameraSourceId={null} />
       </div>
-
     </>
   );
 }

@@ -2,17 +2,16 @@ import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import FilterBar from "../../../components/shared/FilterBar";
-import FilterSelect from "../../../components/shared/FilterSelect";
-import Button from "../../../components/ui/button/Button";
 import ListToolbar from "../../../components/shared/ListToolbar";
 import ListPagination from "../../../components/shared/ListPagination";
 import Can from "../../../components/shared/Can";
+import TripFilters from "../components/TripFilters";
 import TripTable from "../components/TripTable";
 import CreateTripButton from "../components/CreateTripButton";
-import { TRIP_STATUS_OPTIONS } from "../components/tripTone";
 import { useTrips } from "../hooks/useTrips";
-import type { Trip, TripFilters } from "../api/trips.types";
+import type { Trip, TripFilters as Filters } from "../api/trips.types";
+
+import "../../incidents/styles/incidents-centre.css";
 
 interface PaginatorMeta {
   current_page?: number;
@@ -28,7 +27,7 @@ export default function TripListPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const filters: TripFilters = {
+  const filters: Filters = {
     status:   params.get("status")   ?? undefined,
     page:     params.get("page")     ? Number(params.get("page")) : undefined,
     per_page: params.get("per_page") ? Number(params.get("per_page")) : DEFAULT_PAGE_SIZE,
@@ -53,7 +52,7 @@ export default function TripListPage() {
   }, [trips, search]);
 
   // ── Filter / page helpers ─────────────────────────────────────────────────
-  const updateFilters = useCallback((next: Partial<TripFilters>) => {
+  const updateFilters = useCallback((next: Partial<Filters>) => {
     setSearch("");
     const merged = { ...filters, ...next };
     const sp = new URLSearchParams();
@@ -87,23 +86,7 @@ export default function TripListPage() {
       />
 
       <div className="flex flex-col gap-4 pb-6">
-        <FilterBar
-          trailing={
-            filters.status ? (
-              <Button size="sm" variant="outline" onClick={clear}>
-                Clear
-              </Button>
-            ) : undefined
-          }
-        >
-          <FilterSelect
-            label="Status"
-            value={filters.status ?? ""}
-            options={TRIP_STATUS_OPTIONS}
-            placeholder="All statuses"
-            onChange={(v) => updateFilters({ status: v || undefined })}
-          />
-        </FilterBar>
+        <TripFilters filters={filters} onChange={updateFilters} onClear={clear} />
 
         <ListToolbar
           search={search}
@@ -114,7 +97,7 @@ export default function TripListPage() {
           pageSize={filters.per_page ?? DEFAULT_PAGE_SIZE}
           onPageSizeChange={setPageSize}
           onRefresh={() => void query.refetch()}
-          placeholder="Search trips…"
+          placeholder="Search trips\u2026"
           refreshLabel="Refresh trips"
         />
 
