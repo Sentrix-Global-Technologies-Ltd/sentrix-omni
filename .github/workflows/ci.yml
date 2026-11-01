@@ -65,14 +65,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # GHCR image names must be lowercase, but the GitHub org/repo name
+      # (Sentrix-Global-Technologies-Ltd/...) contains capitals.
+      - name: Compute lowercase image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
           build-args: |
             VITE_API_URL=https://${{ vars.API_DOMAIN || 'api.sentrixglobaltech.com' }}/api/v1
             VITE_DEVICE_NAME=Sentrix Console (web)
