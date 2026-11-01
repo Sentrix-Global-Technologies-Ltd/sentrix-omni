@@ -16,7 +16,7 @@ import userEvent from "@testing-library/user-event";
 
 /* ── Module mocks ──────────────────────────────────────────────────────── */
 vi.mock("../../../components/common/PageMeta", () => ({ default: () => null }));
-vi.mock("../../../components/common/PageBreadcrumb", () => ({ default: () => null }));
+vi.mock("../../../components/common/PageBreadCrumb", () => ({ default: () => null }));
 
 // Stub Link so we don't need a full router context.
 vi.mock("react-router", async (importActual) => {

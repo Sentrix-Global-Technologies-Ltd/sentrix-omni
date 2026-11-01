@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
-import PageBreadcrumb from "../../../components/common/PageBreadcrumb";
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import ListToolbar from "../../../components/shared/ListToolbar";
 import ListPagination from "../../../components/shared/ListPagination";
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
