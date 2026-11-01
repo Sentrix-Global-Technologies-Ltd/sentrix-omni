@@ -51,6 +51,44 @@ function osmTileUrl(tx: number, ty: number, z: number): string {
   return `https://${sub}.tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
 }
 
+interface MapTile {
+  key: string;
+  src: string;
+  left: number;
+  top: number;
+}
+
+/**
+ * Visible tile grid for the current viewport. A pure function kept outside the
+ * component so MapView's body (which owns all the hooks) contains no loops.
+ */
+function buildTiles(
+  zoom: number,
+  tlWX: number,
+  tlWY: number,
+  tileX0: number,
+  tileX1: number,
+  tileY0: number,
+  tileY1: number,
+): MapTile[] {
+  const maxTile = Math.pow(2, zoom);
+  const tiles: MapTile[] = [];
+  for (let tx = tileX0; tx < tileX1; tx++) {
+    for (let ty = tileY0; ty < tileY1; ty++) {
+      const nTx = ((tx % maxTile) + maxTile) % maxTile;
+      const nTy = ((ty % maxTile) + maxTile) % maxTile;
+      if (nTy < 0 || nTy >= maxTile) continue;
+      tiles.push({
+        key: `${nTx}-${nTy}-${zoom}`,
+        src: osmTileUrl(nTx, nTy, zoom),
+        left: tx * TILE_SIZE - tlWX,
+        top: ty * TILE_SIZE - tlWY,
+      });
+    }
+  }
+  return tiles;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -126,24 +164,8 @@ export default function MapView({
   const tileY0 = Math.floor(tlWY / TILE_SIZE);
   const tileX1 = Math.ceil((tlWX + size.w) / TILE_SIZE);
   const tileY1 = Math.ceil((tlWY + size.h) / TILE_SIZE);
-  const maxTile = Math.pow(2, zoom);
 
-
-
-  const tiles: { key: string; src: string; left: number; top: number }[] = [];
-  for (let tx = tileX0; tx < tileX1; tx++) {
-    for (let ty = tileY0; ty < tileY1; ty++) {
-      const nTx = ((tx % maxTile) + maxTile) % maxTile;
-      const nTy = ((ty % maxTile) + maxTile) % maxTile;
-      if (nTy < 0 || nTy >= maxTile) continue;
-      tiles.push({
-        key: `${nTx}-${nTy}-${zoom}`,
-        src: osmTileUrl(nTx, nTy, zoom),
-        left: tx * TILE_SIZE - tlWX,
-        top: ty * TILE_SIZE - tlWY,
-      });
-    }
-  }
+  const tiles = buildTiles(zoom, tlWX, tlWY, tileX0, tileX1, tileY0, tileY1);
 
   // ── Markers in screen-space ─────────────────────────────────────────────────
   const pinPositions = markers.map((m) => ({

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import FacilityMapCampus, {
   buildingToSvgRect,
   zoneToSvgRect,
@@ -771,15 +771,16 @@ describe("zoom and navigation (Zoom Fix)", () => {
     // jsdom does not implement SVG matrix methods needed by coordinateHelpers;
     // provide minimal stubs so onConfigMouseDown doesn't throw.
     const svgEl = container.querySelector('svg') as SVGSVGElement;
-    (svgEl as any).getScreenCTM = () => ({
-      a: 1, b: 0, c: 0, d: 1, e: 0, f: 0,
-      inverse: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
+    Object.assign(svgEl, {
+      getScreenCTM: () => ({
+        a: 1, b: 0, c: 0, d: 1, e: 0, f: 0,
+        inverse: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
+      }),
+      createSVGPoint: () => {
+        const p = { x: 0, y: 0, matrixTransform: () => ({ x: 0, y: 0 }) };
+        return p;
+      },
     });
-    (svgEl as any).createSVGPoint = () => {
-      const p: any = { x: 0, y: 0 };
-      p.matrixTransform = () => ({ x: 0, y: 0 });
-      return p;
-    };
     fireEvent.mouseDown(wrap, { clientX: 0, clientY: 0 });
     fireEvent.mouseMove(wrap, { clientX: 50, clientY: 50 });
     fireEvent.mouseUp(wrap);

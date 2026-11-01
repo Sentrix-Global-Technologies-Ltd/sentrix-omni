@@ -47,7 +47,7 @@ vi.mock("../../../components/shared/toast", () => ({
 }));
 
 // Authz — default: allow hardware.register
-let mockIsAllowed = (_rule: unknown) => true;
+let mockIsAllowed: (rule: unknown) => boolean = () => true;
 vi.mock("../../../hooks/useAuthz", () => ({
   useAuthz: () => ({ isAllowed: (rule: unknown) => mockIsAllowed(rule) }),
 }));

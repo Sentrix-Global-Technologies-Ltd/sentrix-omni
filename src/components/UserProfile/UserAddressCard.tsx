@@ -11,7 +11,7 @@ import Label from "../form/Label";
 
 // Mirror the backend's UpdateProfileRequest regexes exactly.
 const POSTAL_PATTERN = /^[A-Za-z0-9\-\s]{1,20}$/;
-const TAX_ID_PATTERN = /^[A-Za-z0-9\-]{1,50}$/;
+const TAX_ID_PATTERN = /^[A-Za-z0-9-]{1,50}$/;
 
 export default function UserAddressCard() {
   const { principal } = useAuth();

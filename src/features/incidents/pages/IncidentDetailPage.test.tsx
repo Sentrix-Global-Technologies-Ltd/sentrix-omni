@@ -777,8 +777,6 @@ describe("IncidentDetailPage", () => {
     // The timeline panel renders "Incident Opened" (from incidentTone.humanize)
     // but "Assignment Responder Offered" should NOT appear there
     // (it shows in Response Log section instead)
-    const timelinePanel = document.querySelector('[data-testid="incident-timeline-panel"]') 
-      ?? document.body;
     // The Response Log shows accepted/offered
     expect(screen.getByText(/assignment offered to a responder/i)).toBeInTheDocument();
   });

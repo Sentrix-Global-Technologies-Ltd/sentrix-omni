@@ -35,15 +35,12 @@ export default function BridgeRowMenu({ bridge }: Props) {
   const [secret, setSecret] = useState<string | null>(null);
 
   const canManage = isAllowed({ anyPermission: ["bridges.manage"] });
-  if (!canManage) return null;
 
   // Visibility per status
   const notRevoked  = bridge.status !== "revoked";
   const isActive    = bridge.status === "active";
   const canActivate = bridge.status !== "active" && notRevoked;
   const hasActions  = notRevoked; // at minimum Rotate + Revoke are always visible if not revoked
-
-  if (!hasActions) return null;
 
   // ── Dropdown positioning (portal, escapes CSS transform ancestors) ─────────
 
@@ -82,6 +79,9 @@ export default function BridgeRowMenu({ bridge }: Props) {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [menuOpen]);
+
+  // Hooks above must run on every render; bail out only after all of them.
+  if (!canManage || !hasActions) return null;
 
   // ── Pick + confirm ─────────────────────────────────────────────────────────
 

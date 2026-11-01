@@ -4,7 +4,6 @@ import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator
 import { useCameraFeeds } from "../hooks/useCameraFeeds";
 import LiveCameraGrid, { type GridLayout } from "../components/LiveCameraGrid";
 import LiveAiTimeline from "../components/LiveAiTimeline";
-import type { CameraSource } from "../api/camera-feeds.types";
 import "../styles/live-monitoring.css";
 
 /* ── Inline SVG icons — no lucide-react ────────────────────────────────── */
@@ -127,8 +126,8 @@ export default function LiveMonitoringPage() {
   };
 
   // No-op handlers kept for LiveCameraGrid API compatibility
-  const handleSelect = (_source: CameraSource) => { /* selection no longer drives a sidebar */ };
-  const handleFullscreen = (_source: CameraSource) => { /* tile handles its own fullscreen */ };
+  const handleSelect = () => { /* selection no longer drives a sidebar */ };
+  const handleFullscreen = () => { /* tile handles its own fullscreen */ };
 
   const isLive = !query.isError && !query.isLoading && Boolean(query.data);
 

@@ -93,7 +93,6 @@ function ClipViewer({
 }) {
   return (
     <div className="cv-media-wrap">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         className="cv-media-video"
         src={obs.clip_url ?? ""}

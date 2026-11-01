@@ -67,8 +67,6 @@ export default function DeviceActionsMenu({ device }: DeviceActionsMenuProps) {
   const hasAnyAction =
     canResync || canDiagnose || (canManage && availableTransitions.length > 0);
 
-  if (!hasAnyAction) return null;
-
   // ── Dropdown positioning — portal-rendered to escape CSS transform ancestors ─
 
   useEffect(() => {
@@ -107,6 +105,9 @@ export default function DeviceActionsMenu({ device }: DeviceActionsMenuProps) {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [menuOpen]);
+
+  // Hooks above must run on every render; bail out only after all of them.
+  if (!hasAnyAction) return null;
 
   const pick = (action: ActionKey) => {
     setMenuOpen(false);
