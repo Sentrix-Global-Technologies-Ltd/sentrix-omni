@@ -1,51 +1,52 @@
 import { useCameraSourcesSummary } from '../../camera-feeds/hooks/useCameraFeeds';
 
-// MOCK: warning count has no field in CameraSourcesSummary — kept as Bolt reference
-const MOCK_WARNING_COUNT = 10;
-
 /**
  * VisionGuardCameraHealthCard
- * Uses useCameraSourcesSummary() for total/online counts.
- * MOCK: Warning count is a Bolt reference (10) — CameraSourcesSummary has no
- *       warning field. Offline = total - online (real). Ring proportions use
- *       real online % when data is available.
+ * Uses useCameraSourcesSummary() for total/online counts. Offline = total - online.
+ * The summary endpoint has no "warning" field, so the Warning row shows "—"
+ * rather than an invented number. When the API is unavailable every figure
+ * shows "—" and an unavailable notice is displayed; nothing is fabricated.
  */
 export default function VisionGuardCameraHealthCard() {
   const { data: result, isLoading, isError } = useCameraSourcesSummary();
   const summary = result?.data;
 
   const hasLiveData = !isLoading && !isError && summary != null;
-  // MOCK: fall back to Bolt reference values when no live data
-  const total   = hasLiveData ? summary!.total  : 128;
-  const online  = hasLiveData ? summary!.online : 112;
-  // MOCK: warning is always Bolt's placeholder — no API field
-  const warning = MOCK_WARNING_COUNT;
-  const offline = Math.max(0, total - online - warning);
-  const isMock  = !hasLiveData && !isLoading;
+  const total   = hasLiveData ? summary.total  : null;
+  const online  = hasLiveData ? summary.online : null;
+  const offline = total != null && online != null ? Math.max(0, total - online) : null;
 
-  const onlinePct  = total > 0 ? Math.round((online  / total) * 100) : 68;
-  const warningPct = total > 0 ? Math.round((warning / total) * 100) : 8;
-  // offline fills the rest
+  const onlinePct  = total != null && online != null && total > 0 ? Math.round((online / total) * 100) : null;
+  const offlinePct = onlinePct != null ? 100 - onlinePct : null;
+
+  const fmt = (n: number | null) => (isLoading ? '…' : n ?? '—');
+  const fmtPct = (n: number | null) => (n == null ? '—' : `${n}%`);
+
+  // Teal = online, grey = offline. With no live data the ring is a neutral grey.
   const ringStyle = {
-    background: `conic-gradient(#0fa9aa 0 ${onlinePct}%, #f0a53a ${onlinePct}% ${onlinePct + warningPct}%, #818ba0 ${onlinePct + warningPct}% 100%)`,
+    background:
+      onlinePct != null
+        ? `conic-gradient(#0fa9aa 0 ${onlinePct}%, #818ba0 ${onlinePct}% 100%)`
+        : '#e5e9f0',
   };
 
   return (
     <section className="panel health-panel">
       <div className="panel-title">
-        <h2>
-          Camera Health
-          {isMock && (
-            <span title="Mock data — no live camera summary" style={{ fontSize: 9, opacity: 0.4 }}>*</span>
-          )}
-        </h2>
+        <h2>Camera Health</h2>
         <button className="text-link">All cameras</button>
       </div>
+
+      {isError && (
+        <div role="alert" style={{ padding: '4px 9px', fontSize: 12, color: '#b42318' }}>
+          Camera summary unavailable.
+        </div>
+      )}
 
       <div className="health-body">
         <div className="health-ring" style={ringStyle}>
           <div>
-            <strong>{isLoading ? '…' : total}</strong>
+            <strong>{fmt(total)}</strong>
             <span>Total</span>
           </div>
         </div>
@@ -54,21 +55,20 @@ export default function VisionGuardCameraHealthCard() {
           <div>
             <i className="online" />
             <span>Online</span>
-            <b style={{ fontSize: 12, color: '#142240' }}>{isLoading ? '…' : online}</b>
-            <small>{onlinePct}%</small>
+            <b style={{ fontSize: 12, color: '#142240' }}>{fmt(online)}</b>
+            <small>{fmtPct(onlinePct)}</small>
           </div>
           <div>
             <i className="warning" />
             <span>Warning</span>
-            {/* MOCK: warning count */}
-            <b style={{ fontSize: 12, color: '#142240' }}>{warning}<span title="Mock value" style={{ fontSize: 8, opacity: 0.4 }}>*</span></b>
-            <small>{warningPct}%</small>
+            <b style={{ fontSize: 12, color: '#142240' }} title="Not reported by the camera summary API">—</b>
+            <small>—</small>
           </div>
           <div>
             <i className="offline" />
             <span>Offline</span>
-            <b style={{ fontSize: 12, color: '#142240' }}>{isLoading ? '…' : offline}</b>
-            <small>{100 - onlinePct - warningPct}%</small>
+            <b style={{ fontSize: 12, color: '#142240' }}>{fmt(offline)}</b>
+            <small>{fmtPct(offlinePct)}</small>
           </div>
         </div>
       </div>

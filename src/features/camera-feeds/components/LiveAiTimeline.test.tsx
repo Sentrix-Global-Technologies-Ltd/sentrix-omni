@@ -9,7 +9,7 @@
  *  - Honest labelling (no "Live Feed" badge, coverage note present)
  *  - No silent fallback to mock data on error
  */
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import {
@@ -265,10 +265,14 @@ describe("LiveAiTimeline component", () => {
     expect(screen.getByText(/No detections in the past/i)).toBeInTheDocument();
   });
 
-  it("AT22: timeline track is hidden during empty state", () => {
+  it("AT22: empty state keeps the timeline track and shows the quiet-period notice inside the region", () => {
     setup({ events: [] });
     render(<LiveAiTimeline />);
-    expect(document.querySelector(".lm-htl-track")).toBeNull();
+    const region = screen.getByRole("region", { name: /ai detection timeline/i });
+    expect(region.querySelector(".lm-htl-track")).not.toBeNull();
+    expect(within(region).getByText(/No detections in the past/i)).toBeInTheDocument();
+    // No slot has any detection while empty
+    expect(region.querySelectorAll(".lm-htl-slot:not(.lm-htl-slot--empty)").length).toBe(0);
   });
 
   it("AT23: renders timeline slots when events are present", () => {

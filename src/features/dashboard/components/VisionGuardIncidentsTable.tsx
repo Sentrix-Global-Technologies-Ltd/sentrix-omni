@@ -41,25 +41,32 @@ function statusColor(
   return 'primary'; // open, new, investigating
 }
 
-/** MOCK: Bolt reference rows — shown when no incidents exist */
-const MOCK_ROWS = [
-  { id: 'INC-2024-1021', title: 'Perimeter Breach',     location: 'Building A',    time: 'May 22 09:14 AM', severity: 'high',   status: 'Investigating' },
-  { id: 'INC-2024-1020', title: 'Loitering',            location: 'Parking Lot B', time: 'May 22 09:08 AM', severity: 'medium', status: 'New'           },
-  { id: 'INC-2024-1019', title: 'Unauthorized Access',  location: 'East Entrance', time: 'May 22 08:56 AM', severity: 'high',   status: 'Investigating' },
-  { id: 'INC-2024-1018', title: 'Vehicle Without Auth', location: 'South Gate',    time: 'May 22 08:42 AM', severity: 'medium', status: 'Resolved'      },
-  { id: 'INC-2024-1017', title: 'Suspicious Activity',  location: 'Loading Dock',  time: 'May 22 08:31 AM', severity: 'low',    status: 'Resolved'      },
+/**
+ * Demo mode is opt-in: local development (import.meta.env.DEV) or an explicit
+ * VITE_DEMO_MODE=true. Same gate as the Evidence console. Never on in a
+ * production build unless explicitly enabled.
+ */
+const DEMO_ENABLED =
+  import.meta.env.DEV === true || import.meta.env.VITE_DEMO_MODE === 'true';
+
+/** Illustrative rows, shown only in demo mode after a successful empty API response. */
+const DEMO_ROWS = [
+  { id: 'DEMO-1', title: 'Perimeter Breach',     time: 'Sample', severity: 'high',   status: 'Investigating' },
+  { id: 'DEMO-2', title: 'Loitering',            time: 'Sample', severity: 'medium', status: 'New'           },
+  { id: 'DEMO-3', title: 'Unauthorized Access',  time: 'Sample', severity: 'high',   status: 'Investigating' },
 ];
 
 /**
  * VisionGuardIncidentsTable
  * Shows the first 5 incidents from useIncidents({}).
- * MOCK: Falls back to Bolt reference rows when the result is empty.
- * Uses Sentrix Table + Badge components.
+ * - API error  -> error message (never demo rows).
+ * - API empty  -> genuine empty state; labelled demo rows only when demo mode is enabled.
  */
 export default function VisionGuardIncidentsTable() {
   const { data: result, isLoading, isError } = useIncidents({});
   const incidents: Incident[] = result?.data ?? [];
-  const useMock = !isLoading && !isError && incidents.length === 0;
+  const isEmpty = !isLoading && !isError && incidents.length === 0;
+  const useDemo = isEmpty && DEMO_ENABLED;
   const rows = incidents.slice(0, 5);
 
   return (
@@ -67,8 +74,14 @@ export default function VisionGuardIncidentsTable() {
       <div className="panel-title">
         <h2>
           Recent Incidents
-          {useMock && (
-            <span title="Mock data — no incidents found" style={{ fontSize: 9, opacity: 0.4 }}>*</span>
+          {useDemo && (
+            <span
+              className="demo-badge"
+              title="Demo data — not real incidents"
+              style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '2px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e' }}
+            >
+              DEMO DATA
+            </span>
           )}
         </h2>
         <button className="text-link">View all</button>
@@ -79,7 +92,17 @@ export default function VisionGuardIncidentsTable() {
           <div style={{ padding: '16px 9px', fontSize: 12, color: '#8290a1' }}>Loading…</div>
         )}
 
-        {!isLoading && (
+        {isError && (
+          <div role="alert" style={{ padding: '16px 9px', fontSize: 12, color: '#b42318' }}>
+            Failed to load incidents.
+          </div>
+        )}
+
+        {isEmpty && !useDemo && (
+          <div style={{ padding: '16px 9px', fontSize: 12, color: '#8290a1' }}>No incidents found.</div>
+        )}
+
+        {!isLoading && !isError && !isEmpty || useDemo ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -91,7 +114,7 @@ export default function VisionGuardIncidentsTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {!useMock && rows.map((inc: Incident) => (
+              {!useDemo && rows.map((inc: Incident) => (
                 <TableRow key={inc.id}>
                   <TableCell>{shortId(inc.id)}</TableCell>
                   <TableCell>{inc.title}</TableCell>
@@ -111,11 +134,10 @@ export default function VisionGuardIncidentsTable() {
                 </TableRow>
               ))}
 
-              {/* MOCK: Bolt reference rows */}
-              {useMock && MOCK_ROWS.map((r) => (
+              {useDemo && DEMO_ROWS.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.id}</TableCell>
-                  <TableCell>{r.title}</TableCell>
+                  <TableCell>{r.title} <em style={{ fontSize: 10, opacity: 0.7 }}>(demo)</em></TableCell>
                   <TableCell>{r.time}</TableCell>
                   <TableCell>
                     <Badge size="sm" color={sevColor(r.severity)}>
@@ -131,7 +153,7 @@ export default function VisionGuardIncidentsTable() {
               ))}
             </TableBody>
           </Table>
-        )}
+        ) : null}
       </div>
     </section>
   );

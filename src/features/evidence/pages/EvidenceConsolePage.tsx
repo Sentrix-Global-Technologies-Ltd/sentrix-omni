@@ -299,8 +299,9 @@ export default function EvidenceConsolePage() {
   }, []);
 
   /*
-   * Demo records are non-actionable — clicking them does not open the details
-   * panel because hold/bookmark/custody actions cannot run against demo IDs.
+   * Demo records open the details panel like any other card, but they are
+   * non-actionable: the drawer shows "Actions unavailable for demo records."
+   * and disables hold/bookmark/custody because those cannot run against demo IDs.
    */
   const handleCardClick = useCallback((o: Observation) => {
     setSelected((prev) => prev?.id === o.id ? null : o);

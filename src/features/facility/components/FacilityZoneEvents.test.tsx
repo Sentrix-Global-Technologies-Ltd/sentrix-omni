@@ -1,7 +1,14 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router";
 import { describe, it, expect, vi } from "vitest";
 import FacilityZoneEvents from "./FacilityZoneEvents";
 import type { RecentZoneEvent, FacilityBuilding } from "../api/facility.types";
+
+/** The component calls useNavigate, so every render needs Router context. */
+function render(ui: ReactElement) {
+  return rtlRender(ui, { wrapper: MemoryRouter });
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -5,11 +5,10 @@
  *   C1  Clicking a card populates Evidence Details drawer.
  *   C2  Clicking the same card again deselects it (drawer resets to empty).
  *   C3  Clicking a different card swaps the drawer contents.
- *   C4  Category click sets the correct kind filter on useEvidenceSearch.
- *   C5  "All Evidence" clears the kind filter (kind → undefined).
+ *   C4  Choosing a kind in Filters → Kind passes that kind to useEvidenceSearch.
+ *   C5  Choosing "All kinds" clears the kind filter (kind → undefined).
  *   C6  Pagination cursor is reset (undefined) on every kind change.
- *   C7  The active category button reflects filters.kind (kind dropdown
- *       consistency — category sidebar and Kind dropdown stay in sync).
+ *   C7  The Kind dropdown reflects the active filters.kind value.
  *   C8  Selecting an observation and then changing the kind filter clears
  *       the selection when the selected card is no longer in the display.
  *   C9  An API error from useEvidenceSearch never surfaces demo records
@@ -49,6 +48,12 @@ vi.mock("../hooks/useEvidenceActions", () => ({
   useObservationActions: () => ({
     bookmark: { mutateAsync: vi.fn() },
     hold: { mutateAsync: vi.fn() },
+  }),
+  useEvidenceCollectionActions: () => ({
+    create: { mutateAsync: vi.fn(), isPending: false },
+    addObservations: { mutateAsync: vi.fn(), isPending: false },
+    removeObservations: { mutateAsync: vi.fn(), isPending: false },
+    remove: { mutateAsync: vi.fn(), isPending: false },
   }),
 }));
 
@@ -184,57 +189,68 @@ describe("EvidenceConsolePage — card selection", () => {
   });
 });
 
-describe("EvidenceConsolePage — category filtering", () => {
-  it("C4: clicking the Vehicle category passes kind=vehicle to useEvidenceSearch", async () => {
+async function openKindSelect(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /filters/i }));
+  return screen.getByRole("combobox", { name: /kind/i });
+}
+
+describe("EvidenceConsolePage — kind filtering (Filters → Kind)", () => {
+  it("C4: choosing Vehicle in the Kind dropdown passes kind=vehicle to useEvidenceSearch", async () => {
     const user = userEvent.setup();
     render(<EvidenceConsolePage />);
 
-    await user.click(screen.getAllByRole("button", { name: /vehicle/i })[0]);
+    expect(latestFilters()?.kind).toBeUndefined();
+    await user.selectOptions(await openKindSelect(user), "vehicle");
     expect(latestFilters()?.kind).toBe("vehicle");
   });
 
-  it("C5: clicking All Evidence clears the kind filter", async () => {
+  it("C5: choosing All kinds clears the kind filter", async () => {
     const user = userEvent.setup();
     render(<EvidenceConsolePage />);
 
-    await user.click(screen.getAllByRole("button", { name: /vehicle/i })[0]);
+    const kindSelect = await openKindSelect(user);
+    await user.selectOptions(kindSelect, "vehicle");
     expect(latestFilters()?.kind).toBe("vehicle");
 
-    await user.click(screen.getByRole("button", { name: /all evidence/i }));
+    await user.selectOptions(kindSelect, "");
     expect(latestFilters()?.kind).toBeUndefined();
   });
 
   it("C6: every kind change resets the pagination cursor to undefined", async () => {
+    vi.mocked(useEvidenceSearch).mockImplementation((filters) => ({
+      ...emptySearch(),
+      data: {
+        data: filters.kind === "face" ? [faceObs] : [vehicleObs, faceObs],
+        meta: { next_cursor: "cursor-2" },
+      },
+    }) as unknown as ReturnType<typeof useEvidenceSearch>);
+
     const user = userEvent.setup();
     render(<EvidenceConsolePage />);
 
-    await user.click(screen.getAllByRole("button", { name: /vehicle/i })[0]);
-    expect(latestFilters()?.cursor).toBeUndefined();
+    // Move to a later page so a real cursor is in the filters.
+    await user.click(screen.getByRole("button", { name: /older/i }));
+    expect(latestFilters()?.cursor).toBe("cursor-2");
 
-    await user.click(screen.getByRole("button", { name: /face/i }));
+    // Changing the kind must drop that cursor.
+    await user.selectOptions(await openKindSelect(user), "face");
+    expect(latestFilters()?.kind).toBe("face");
     expect(latestFilters()?.cursor).toBeUndefined();
   });
 
-  it("C7: the active category button reflects filters.kind (Kind dropdown consistency)", async () => {
+  it("C7: the Kind dropdown reflects the active filters.kind", async () => {
     const user = userEvent.setup();
     render(<EvidenceConsolePage />);
 
-    const allBtn = screen.getByRole("button", { name: /all evidence/i });
-    expect(allBtn.className).toContain("active");
+    const kindSelect = await openKindSelect(user);
+    expect(kindSelect).toHaveValue("");
 
-    const vehicleBtn = screen.getAllByRole("button", { name: /vehicle/i })[0];
-    await user.click(vehicleBtn);
-    expect(vehicleBtn.className).toContain("active");
-    expect(allBtn.className).not.toContain("active");
+    await user.selectOptions(kindSelect, "vehicle");
+    expect(kindSelect).toHaveValue("vehicle");
 
-    // Change kind via the dropdown and check sidebar updates
-    await user.click(screen.getByRole("button", { name: /filters/i }));
-    const kindSelect = screen.getByRole("combobox", { name: /kind/i });
     await user.selectOptions(kindSelect, "face");
-
-    const faceBtn = screen.getAllByRole("button", { name: /face/i })[0];
-    expect(faceBtn.className).toContain("active");
-    expect(vehicleBtn.className).not.toContain("active");
+    expect(kindSelect).toHaveValue("face");
+    expect(latestFilters()?.kind).toBe("face");
   });
 });
 
@@ -250,10 +266,10 @@ describe("EvidenceConsolePage — selection reconciliation", () => {
         .getByRole("heading", { level: 3, name: /Vehicle at Gate/i })
     ).toBeInTheDocument();
 
-    // Switch to Face category — vehicle obs leaves the display set.
+    // Switch Kind to Face — vehicle obs leaves the display set.
     // React will unmount the populated drawer aside and mount the empty-state
     // aside, so we re-query rather than holding a stale reference.
-    await user.click(screen.getAllByRole("button", { name: /face/i })[0]);
+    await user.selectOptions(await openKindSelect(user), "face");
     expect(
       within(screen.getByRole("complementary", { name: /evidence details/i }))
         .getByText("No evidence selected")
