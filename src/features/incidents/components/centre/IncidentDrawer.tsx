@@ -295,7 +295,7 @@ export default function IncidentDrawer({ incidentId, onClose }: IncidentDrawerPr
       else if (pendingAction === "escalate")  await actions.escalate.mutateAsync();
       else if (pendingAction === "resolve")   await actions.resolve.mutateAsync();
       else if (pendingAction === "close")     await actions.close.mutateAsync();
-      else if (pendingAction === "notify")    await actions.notifyAuthorities.mutateAsync();
+      else if (pendingAction === "notify")    await actions.notifyAuthorities.mutateAsync(undefined);
       toast.success("Action completed successfully.");
       setPendingAction(null);
     } catch {

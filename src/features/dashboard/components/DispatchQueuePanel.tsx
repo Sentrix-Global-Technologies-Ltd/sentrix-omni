@@ -32,7 +32,7 @@ export default function DispatchQueuePanel() {
         isLoading={query.isLoading}
         error={query.error}
         onRetry={() => void query.refetch()}
-        onRowClick={(a: Assignment) => navigate(`/assignments/${a.id}`)}
+        onView={(a: Assignment) => navigate(`/assignments/${a.id}`)}
       />
     </div>
   );

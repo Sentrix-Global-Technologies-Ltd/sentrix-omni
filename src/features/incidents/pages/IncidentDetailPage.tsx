@@ -109,7 +109,7 @@ function AssignmentSummary({
     );
   }
 
-  const activeLines = assignment.responders.filter(
+  const activeLines = (assignment.responders ?? []).filter(
     (r: AssignmentResponderLine) => !["completed", "declined", "timed_out", "stood_down", "cancelled"].includes(r.status),
   );
 
@@ -193,7 +193,7 @@ function resolveActorName(
 
   // Responder lifecycle events carry responder_id in the payload.
   if (responderId) {
-    const line = assignment?.responders.find(
+    const line = assignment?.responders?.find(
       (r: AssignmentResponderLine) => r.responder_id === responderId,
     );
     if (line?.responder_name) return line.responder_name;
@@ -394,22 +394,6 @@ function DetectionEvidencePanel({
     </div>
   );
 }
-
-// ── Severity colours ──────────────────────────────────────────────────────────
-
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: "#ef4444",
-  high:     "#f97316",
-  medium:   "#eab308",
-  low:      "#3b82f6",
-};
-
-const SEVERITY_BG: Record<string, string> = {
-  critical: "bg-red-50 dark:bg-red-900/20",
-  high:     "bg-orange-50 dark:bg-orange-900/20",
-  medium:   "bg-yellow-50 dark:bg-yellow-900/20",
-  low:      "bg-blue-50 dark:bg-blue-900/20",
-};
 
 // ── Incident-type decorative illustration ─────────────────────────────────────
 
@@ -721,11 +705,9 @@ export default function IncidentDetailPage() {
                     {["open", "investigating"].includes(incident.status) && (
                       <ConfirmActionButton label="Escalate" title="Escalate incident?" description="Escalate this incident for higher-priority response." confirmLabel="Escalate" successMessage="Incident escalated" onConfirm={() => actions.escalate.mutateAsync()} triggerClassName="ic-row-menu-item" />
                     )}
-                    {incident.status !== "closed" && (
-                      <ConfirmActionButton label="Notify authorities" tone="danger" title="Record that authorities were notified?" description="This records that you personally contacted external authorities. No automated dispatch." confirmLabel="Record" successMessage="Recorded" onOpen={() => setAuthoritiesNotes("")} onConfirm={() => actions.notifyAuthorities.mutateAsync(authoritiesNotes || undefined)} triggerClassName="ic-row-menu-item ic-row-menu-item--danger">
-                        <textarea value={authoritiesNotes} onChange={(e) => setAuthoritiesNotes(e.target.value)} placeholder="Notes — who you contacted, reference number, etc. (optional)" rows={3} className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90" />
-                      </ConfirmActionButton>
-                    )}
+                    <ConfirmActionButton label="Notify authorities" tone="danger" title="Record that authorities were notified?" description="This records that you personally contacted external authorities. No automated dispatch." confirmLabel="Record" successMessage="Recorded" onOpen={() => setAuthoritiesNotes("")} onConfirm={() => actions.notifyAuthorities.mutateAsync(authoritiesNotes || undefined)} triggerClassName="ic-row-menu-item ic-row-menu-item--danger">
+                      <textarea value={authoritiesNotes} onChange={(e) => setAuthoritiesNotes(e.target.value)} placeholder="Notes — who you contacted, reference number, etc. (optional)" rows={3} className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:text-white/90" />
+                    </ConfirmActionButton>
                     {["open", "investigating", "escalated"].includes(incident.status) && (
                       <ConfirmActionButton label="Resolve" title="Resolve incident?" description="Mark this incident as resolved." confirmLabel="Resolve" successMessage="Incident resolved" onConfirm={() => actions.resolve.mutateAsync()} triggerClassName="ic-row-menu-item" />
                     )}
@@ -752,7 +734,7 @@ export default function IncidentDetailPage() {
           {/* Top row: type label (left) + severity badge (right) */}
           <div className="flex items-start justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-              {incident.incident_type ?? "Incident"}
+              Incident
             </p>
             <StatusBadge tone={incidentSeverityTone[incident.severity]}>
               {titleCase(incident.severity)}
@@ -775,7 +757,7 @@ export default function IncidentDetailPage() {
           {/* Illustration — hidden on mobile, shown on sm+ */}
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 hidden sm:flex items-end justify-center">
             <IncidentIllustration
-              type={incident.incident_type ?? incident.title ?? ""}
+              type={incident.title}
               severity={incident.severity}
             />
           </div>

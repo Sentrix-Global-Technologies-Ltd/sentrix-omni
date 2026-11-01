@@ -59,9 +59,9 @@ export interface CreateCameraSourcePayload {
 
 export interface UpdateCameraSourcePayload {
   label?: string;
-  site?: string;
-  zone?: string;
-  connection_url?: string;
+  site?: string | null;
+  zone?: string | null;
+  connection_url?: string | null;
   tags?: string[];
   status?: "active" | "inactive";
 }

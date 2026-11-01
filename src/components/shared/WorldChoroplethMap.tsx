@@ -196,7 +196,6 @@ export default function WorldChoroplethMap({ orgs, className, onCountryClick }: 
         map={worldMerc}
         backgroundColor="transparent"
         zoomOnScroll={true}
-        zoomButtons={true}
         regionStyle={{
           initial: {
             fill: isDark ? "#2d3748" : "#e2e8f0",
@@ -214,6 +213,7 @@ export default function WorldChoroplethMap({ orgs, className, onCountryClick }: 
         series={{
           regions: [
             {
+              attribute: "fill",
               values: countryValues,
               scale: isDark
                 ? ["#1e3a6e", "#3b82f6"]
@@ -225,11 +225,6 @@ export default function WorldChoroplethMap({ orgs, className, onCountryClick }: 
         onRegionClick={(_e: Event, code: string) => {
           onCountryClick?.(code);
         }}
-        containerStyle={{
-          width: "100%",
-          height: "100%",
-        }}
-        containerClassName="jvectormap-container"
       />
     </div>
   );

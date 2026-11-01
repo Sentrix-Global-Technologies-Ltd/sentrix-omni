@@ -93,7 +93,7 @@ export default function IntelResponseChart({ rt }: Props) {
     },
     fill: { opacity: isEmpty ? 0.4 : 1 },
     states: {
-      hover: { filter: { type: "darken", value: 0.85 } },
+      hover: { filter: { type: "darken" } },
     },
   };
 

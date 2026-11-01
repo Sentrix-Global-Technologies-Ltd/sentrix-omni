@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import type { CameraSource } from "../api/camera-feeds.types";
-import { feedStatusLabel, feedStatusTone, relativeTime } from "./feedStatusTone";
+import { feedStatusTone } from "./feedStatusTone";
 import CameraSourceTypeBadge from "./CameraSourceTypeBadge";
 import CameraConnectionIndicator from "./CameraConnectionIndicator";
 import CameraHealthRing from "./CameraHealthRing";

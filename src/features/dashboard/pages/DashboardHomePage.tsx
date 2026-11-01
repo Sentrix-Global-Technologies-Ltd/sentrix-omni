@@ -8,8 +8,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useOrganization } from "../../../context/OrganizationContext";
 import {
   AlertHexaIcon,
-  AlertIcon,
-  BoltIcon,
   CheckCircleIcon,
   GroupIcon,
   VideoIcon,
@@ -17,9 +15,6 @@ import {
   CameraIcon,
   FileIcon,
   ArrowRightIcon,
-  MapPinIcon,
-  InfoIcon,
-  TimeIcon,
 } from "../../../icons";
 import { useIncidents } from "../../incidents/hooks/useIncidents";
 import { useIncidentsRealtime } from "../../incidents/hooks/useIncidentsRealtime";
@@ -54,24 +49,6 @@ function severityBadge(s: IncidentSeverity) {
   };
   const { label, cls } = map[s] ?? map.low;
   return <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
-}
-
-/** Icon + bg color for each severity, matching the reference design's colored circles. */
-function alertIcon(title: string, severity: IncidentSeverity) {
-  const t = title.toLowerCase();
-  // type-based first
-  if (t.includes("vehicle") || t.includes("car") || t.includes("unauthori"))
-    return { icon: <BoltIcon className="size-4" />, bg: "bg-orange-50 text-orange-500 dark:bg-orange-500/15" };
-  if (t.includes("loiter") || t.includes("crowd") || t.includes("gathering"))
-    return { icon: <TimeIcon className="size-4" />, bg: "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400" };
-  if (t.includes("ai") || t.includes("model") || t.includes("system") || t.includes("camera"))
-    return { icon: <InfoIcon className="size-4" />, bg: "bg-blue-light-50 text-blue-light-500 dark:bg-blue-light-500/15" };
-  // severity-based fallback
-  if (severity === "critical" || severity === "high")
-    return { icon: <AlertHexaIcon className="size-4" />, bg: "bg-error-50 text-error-500 dark:bg-error-500/15" };
-  if (severity === "medium")
-    return { icon: <AlertIcon className="size-4" />, bg: "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400" };
-  return { icon: <InfoIcon className="size-4" />, bg: "bg-blue-light-50 text-blue-light-500 dark:bg-blue-light-500/15" };
 }
 
 function threatBand(score: number) {
@@ -126,29 +103,7 @@ function ThreatGauge({ score, loading }: { score: number; loading?: boolean }) {
 }
 
 
-// ─── static demo panels (facility overview + quick insights) ─────────────────
-// These remain as demonstration placeholders until real data sources are confirmed
-// and a separate batch wires them up. They are clearly scoped: the KPI row and the
-// threat/alerts/camera strip above already use live data.
-
-const DEMO_INSIGHTS = [
-  { icon: <AlertHexaIcon className="size-4 text-error-500" />, text: "Perimeter breach attempts up 18% this week" },
-  { icon: <VideoIcon className="size-4 text-brand-500" />,     text: "3 camera feeds degraded — check connection" },
-  { icon: <CheckCircleIcon className="size-4 text-success-500" />, text: "All active sites are reporting normally" },
-  { icon: <BoltIcon className="size-4 text-warning-500" />,    text: "Response time improved 12% vs last week" },
-];
-
-const DEMO_FACILITY = [
-  { label: "Total Sites",  value: 16, icon: <GroupIcon className="size-5" />,        iconCls: "text-gray-400 dark:text-gray-500" },
-  { label: "Secure",       value: 14, icon: <CheckCircleIcon className="size-5" />,   iconCls: "text-success-500" },
-  { label: "Attention",    value: 2,  icon: <AlertIcon className="size-5" />,          iconCls: "text-warning-500" },
-  { label: "Offline",      value: 0,  icon: <InfoIcon className="size-5" />,           iconCls: "text-gray-400 dark:text-gray-500" },
-];
-
 // ─── page ────────────────────────────────────────────────────────────────────
-
-interface PaginatorMeta { total?: number }
-function metaTotal(meta: unknown): number { return (meta as PaginatorMeta | undefined)?.total ?? 0; }
 
 export default function DashboardHomePage() {
   const navigate = useNavigate();
@@ -158,7 +113,6 @@ export default function DashboardHomePage() {
   const orgName = current?.name ?? "Vision Guard";
 
   // Real data
-  const openIncidents = useIncidents({ status: "open", per_page: 100 });
   const recentIncidents = useIncidents({ per_page: 5 });
   const cameraSummary = useCameraSourcesSummary();
   const cameraFeeds = useCameraFeeds({});
@@ -170,16 +124,11 @@ export default function DashboardHomePage() {
 
   // Derived camera breakdown
   const feeds = useMemo(() => cameraFeeds.data?.data ?? [], [cameraFeeds.data]);
-  const liveCount    = useMemo(() => feeds.filter((f) => f.feed_status === "live").length, [feeds]);
-  const staleCount   = useMemo(() => feeds.filter((f) => f.feed_status === "stale").length, [feeds]);
-  const offlineCount = useMemo(() => feeds.filter((f) => f.feed_status === "offline" || f.feed_status === "no_feed").length, [feeds]);
 
   // Prefer granular counts from feeds list; fall back to summary
   const totalCameras  = cameraSummary.data?.data.total  ?? feeds.length;
-  const onlineCameras = cameraSummary.data?.data.online ?? liveCount;
 
   const detectionCount = intelReport.data?.data.detections?.total ?? "—";
-  const activeAlerts  = (openIncidents.data?.data ?? []).slice(0, 4);
   const score         = threatScore.data?.data.score ?? 0;
   const factors       = threatScore.data?.data.factors ?? [];
   const firstCamera   = feeds[0] ?? null;

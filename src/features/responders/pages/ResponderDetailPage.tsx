@@ -4,7 +4,6 @@ import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
 import LoadingState from "../../../components/ui/state/LoadingState";
 import ErrorState from "../../../components/ui/state/ErrorState";
-import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import RealtimeIndicator from "../../../components/ui/realtime/RealtimeIndicator";
 import Can from "../../../components/shared/Can";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
@@ -21,10 +20,8 @@ import {
 } from "../hooks/useResponderProfile";
 import {
   formatDateTime,
-  humanize,
   relativeTime,
   responderLabel,
-  responderStatusTone,
   STATUS_OPTIONS,
 } from "../components/responderTone";
 import "../../incidents/styles/incidents-centre.css";

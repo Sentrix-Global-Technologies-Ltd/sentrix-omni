@@ -5,7 +5,6 @@ import {
   DownloadIcon,
   EyeIcon,
   GridIcon,
-  MapPinIcon,
   PlugInIcon,
   ShieldCheckIcon,
   UserCircleIcon,

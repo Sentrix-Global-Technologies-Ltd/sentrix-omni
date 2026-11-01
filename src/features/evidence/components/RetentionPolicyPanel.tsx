@@ -1,6 +1,5 @@
 import Can from "../../../components/shared/Can";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
-import { BoxIconLine, CheckCircleIcon, LockIcon, TrashBinIcon } from "../../../icons";
 import { useRetentionActions, useStorage } from "../../retention/hooks/useRetention";
 import "../../incidents/styles/incidents-centre.css";
 

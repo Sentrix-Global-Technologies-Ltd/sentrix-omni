@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import PageMeta from "../../../components/common/PageMeta";
-import Breadcrumb from "../../../components/shared/Breadcrumb";
 import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
 import { useAuthz } from "../../../hooks/useAuthz";

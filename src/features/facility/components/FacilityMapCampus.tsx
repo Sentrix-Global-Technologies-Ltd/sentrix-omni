@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LayerKey } from "../data/facilityMockData";
-import type { AllOrgCamera, FacilityCameraPin, FacilityBuilding, FeedStatus } from "../api/facility.types";
+import type { AllOrgCamera, FacilityBuilding, FeedStatus } from "../api/facility.types";
 import { useConfigDrag, type GhostRect, type ResizeHandle } from "../hooks/useConfigDrag";
 import { svgPtToBuildingPct } from "../utils/coordinateHelpers";
 
@@ -57,16 +57,6 @@ const POLY_PALETTES: Record<string, { fill: string; fillDark: string; stroke: st
   "bldg-d":    { fill: "#ccfbf1", fillDark: "rgba(20,184,166,0.15)",   stroke: "#14b8a6" },
   "bldg-e":    { fill: "#fed7aa", fillDark: "rgba(249,115,22,0.18)",   stroke: "#f97316" },
   "parking-a": { fill: "#f1f5f9", fillDark: "rgba(148,163,184,0.15)",  stroke: "#94a3b8" },
-};
-
-// Centroids for label placement (from MOCK_BUILDINGS: cx = x+w/2, cy = y+h/2)
-const POLY_CENTROIDS: Record<string, { cx: number; cy: number }> = {
-  "bldg-a":    { cx: 432.5, cy: 142 },
-  "bldg-b":    { cx: 168,   cy: 289 },
-  "bldg-c":    { cx: 673,   cy: 252 },
-  "bldg-d":    { cx: 214.5, cy: 459 },
-  "bldg-e":    { cx: 457,   cy: 452 },
-  "parking-a": { cx: 656,   cy: 451 },
 };
 
 // Fallback palette for unmatched API buildings (cycle by index)
@@ -1165,7 +1155,6 @@ export default function FacilityMapCampus({
             e.dataTransfer.dropEffect = "move";
             // Determine which building the pointer is over
             if (!svgRef.current || !wrapRef.current) return;
-            const wrapRect = wrapRef.current.getBoundingClientRect();
             const svgEl = svgRef.current;
             const pt = svgEl.createSVGPoint();
             pt.x = e.clientX;

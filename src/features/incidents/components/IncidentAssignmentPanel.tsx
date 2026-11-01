@@ -49,6 +49,9 @@ export default function IncidentAssignmentPanel({
     );
   }
 
+  // `responders` is only present when the backend eager-loads it (detail endpoint).
+  const responders = assignment.responders ?? [];
+
   return (
     <div className={card}>
       <div className="mb-4 flex items-center justify-between">
@@ -78,7 +81,7 @@ export default function IncidentAssignmentPanel({
         </div>
         <div>
           <dt className="text-theme-xs uppercase text-gray-400">Responders</dt>
-          <dd className="text-gray-700 dark:text-gray-300">{assignment.responders.length}</dd>
+          <dd className="text-gray-700 dark:text-gray-300">{responders.length}</dd>
         </div>
       </dl>
 
@@ -86,11 +89,11 @@ export default function IncidentAssignmentPanel({
         <h4 className="mb-2 text-theme-xs uppercase tracking-wide text-gray-400">
           Responder lines
         </h4>
-        {assignment.responders.length === 0 ? (
+        {responders.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">None yet.</p>
         ) : (
           <ul className="space-y-2">
-            {assignment.responders.map((line) => (
+            {responders.map((line) => (
               <li key={line.id} className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-sm text-gray-700 dark:text-gray-300">

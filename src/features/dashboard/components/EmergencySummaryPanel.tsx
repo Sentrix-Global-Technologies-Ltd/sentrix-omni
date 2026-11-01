@@ -33,6 +33,7 @@ export default function EmergencySummaryPanel() {
         error={query.error}
         onRetry={() => void query.refetch()}
         onRowClick={(e: Emergency) => navigate(`/emergencies/${e.id}`)}
+        onView={(e: Emergency) => navigate(`/emergencies/${e.id}`)}
       />
     </div>
   );

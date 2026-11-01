@@ -56,7 +56,7 @@ function IconVolumeX() {
  * - Fullscreen via browser Fullscreen API (real).
  * - Snapshot and mute are UI demonstrations (no backend capability) — clearly marked.
  */
-export default function LiveCameraTile({ source, index, selected, onSelect, onFullscreen, onOpenViewer }: Props) {
+export default function LiveCameraTile({ source, index, selected, onSelect, onFullscreen }: Props) {
   const { src } = useAuthenticatedImage(source.last_frame_url, source.last_frame_at);
   const navigate = useNavigate();
   const tileRef = useRef<HTMLDivElement>(null);

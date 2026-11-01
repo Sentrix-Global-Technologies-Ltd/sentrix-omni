@@ -90,11 +90,9 @@ export default function IntelTrendChart({
     },
     fill: { opacity: 1 },
     states: {
-      hover: { filter: { type: "darken", value: 0.85 } },
+      hover: { filter: { type: "darken" } },
     },
   };
-
-  const series = [{ name: title, data }];
 
   /* When no data, render a ghosted placeholder chart so the layout is visible */
   const isEmpty = points.length === 0;

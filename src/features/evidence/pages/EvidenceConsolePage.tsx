@@ -195,20 +195,6 @@ const DEMO_OBSERVATIONS: Observation[] = [
   },
 ];
 
-/**
- * Counts per kind for the demo dataset — keyed by ObservationKind value.
- * "" maps to total. Must stay in sync with DEMO_OBSERVATIONS above.
- */
-const DEMO_COUNTS: Record<string, number> = {
-  "": 6,
-  vehicle: 1,
-  face: 1,
-  plate: 1,
-  behavior: 1,
-  scene: 1,
-  audio: 1,
-};
-
 /* ─── Tab config ─────────────────────────────────────────────────────────── */
 const TABS = [
   { key: "observations", label: "Observations" },

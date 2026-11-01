@@ -45,7 +45,7 @@ function LiveFrameViewer({ source }: { source: CameraSource }) {
       {status === "error" && (
         <div className="cv-media-placeholder">Live frame unavailable</div>
       )}
-      {status === "loaded" && src && (
+      {src && (
         <img className="cv-media-img" src={src} alt={`Live feed — ${source.label}`} />
       )}
 
@@ -461,10 +461,6 @@ function Carousel({
       </div>
     </div>
   );
-}
-
-function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

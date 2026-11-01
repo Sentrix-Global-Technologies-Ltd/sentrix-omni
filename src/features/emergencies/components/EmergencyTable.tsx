@@ -18,7 +18,7 @@ type EmergencyActionKey = "acknowledge" | "resolve" | "cancel";
 interface RowMenuProps {
   emergency: Emergency;
   onView: (e: Emergency) => void;
-  onAction: (e: Emergency, action: EmergencyActionKey) => void;
+  onAction?: (e: Emergency, action: EmergencyActionKey) => void;
 }
 
 function RowMenu({ emergency, onView, onAction }: RowMenuProps) {
@@ -76,7 +76,7 @@ function RowMenu({ emergency, onView, onAction }: RowMenuProps) {
           </button>
 
           {/* Acknowledge — only for triggered */}
-          {canAcknowledge && (
+          {canAcknowledge && onAction && (
             <button
               type="button"
               className="ic-row-menu-item"
@@ -88,7 +88,7 @@ function RowMenu({ emergency, onView, onAction }: RowMenuProps) {
           )}
 
           {/* Resolve — not already resolved/cancelled */}
-          {canResolve && (
+          {canResolve && onAction && (
             <button
               type="button"
               className="ic-row-menu-item"
@@ -100,7 +100,7 @@ function RowMenu({ emergency, onView, onAction }: RowMenuProps) {
           )}
 
           {/* Cancel — not already cancelled/resolved */}
-          {canCancel && (
+          {canCancel && onAction && (
             <button
               type="button"
               className="ic-row-menu-item ic-row-menu-item--danger"
@@ -149,8 +149,9 @@ interface Props {
   onRowClick: (emergency: Emergency) => void;
   /** Actions column: "View details" opens the drawer. */
   onView: (emergency: Emergency) => void;
-  /** Emergency coordination action (shows confirm dialog in the parent). */
-  onAction: (emergency: Emergency, action: EmergencyActionKey) => void;
+  /** Emergency coordination action (shows confirm dialog in the parent).
+   *  Omit on read-only summaries (e.g. the dashboard): actions are then not offered. */
+  onAction?: (emergency: Emergency, action: EmergencyActionKey) => void;
 }
 
 /** Emergency list table — supplies columns to the shared DataTable. */

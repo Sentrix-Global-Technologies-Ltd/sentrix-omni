@@ -77,7 +77,7 @@ export default function EscalationPanel() {
               isLoading={escalatedAssignments.isLoading}
               error={escalatedAssignments.error}
               onRetry={() => void escalatedAssignments.refetch()}
-              onRowClick={(a: Assignment) => navigate(`/assignments/${a.id}`)}
+              onView={(a: Assignment) => navigate(`/assignments/${a.id}`)}
             />
           </div>
         </div>

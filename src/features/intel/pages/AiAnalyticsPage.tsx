@@ -3,7 +3,6 @@ import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import PageMeta from "../../../components/common/PageMeta";
 import PageHeader from "../../../components/shared/PageHeader";
-import Button from "../../../components/ui/button/Button";
 import Can from "../../../components/shared/Can";
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
@@ -42,13 +41,6 @@ const RANGES: { value: IntelRange; label: string }[] = [
 
 const card =
   "rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6";
-
-/** Score band → KPI accent colour */
-function scoreToneClass(score: number) {
-  if (score >= 70) return "ic-stat-accent--critical";
-  if (score >= 35) return "ic-stat-accent--warning";
-  return "ic-stat-accent--success";
-}
 
 /* ─── Inline KPI card (re-uses the ic-stat-card CSS from incidents-centre) */
 interface KpiCardProps {

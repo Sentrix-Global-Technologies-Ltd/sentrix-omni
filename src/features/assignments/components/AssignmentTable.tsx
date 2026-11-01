@@ -10,8 +10,9 @@ import type { Assignment } from "../api/assignments.types";
 interface RowMenuProps {
   assignment: Assignment;
   onView: (a: Assignment) => void;
-  onComplete: (a: Assignment) => void;
-  onCancel: (a: Assignment) => void;
+  /** Omit on read-only summaries (e.g. the dashboard): the action is then not offered. */
+  onComplete?: (a: Assignment) => void;
+  onCancel?: (a: Assignment) => void;
 }
 
 function RowMenu({ assignment, onView, onComplete, onCancel }: RowMenuProps) {
@@ -90,7 +91,7 @@ function RowMenu({ assignment, onView, onComplete, onCancel }: RowMenuProps) {
           >
             View details
           </button>
-          {!isTerminal && (
+          {!isTerminal && onComplete && (
             <button
               type="button"
               className="ic-row-menu-item"
@@ -102,7 +103,7 @@ function RowMenu({ assignment, onView, onComplete, onCancel }: RowMenuProps) {
               Mark complete
             </button>
           )}
-          {!isTerminal && (
+          {!isTerminal && onCancel && (
             <button
               type="button"
               className="ic-row-menu-item ic-row-menu-item--danger"
@@ -129,8 +130,9 @@ interface Props {
   error?: unknown;
   onRetry?: () => void;
   onView: (assignment: Assignment) => void;
-  onComplete: (assignment: Assignment) => void;
-  onCancel: (assignment: Assignment) => void;
+  /** Omit on read-only summaries (e.g. the dashboard): the action is then not offered. */
+  onComplete?: (assignment: Assignment) => void;
+  onCancel?: (assignment: Assignment) => void;
 }
 
 /** Assignment list table — row click or "View details" opens the side drawer. */
