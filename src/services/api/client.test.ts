@@ -54,7 +54,7 @@ describe("apiClient", () => {
     expect(init.headers.Authorization).toBeUndefined();
   });
 
-  it("on 401 clears the token, calls the handler, and throws UnauthorizedError", async () => {
+  it("on 401 (authed call) clears the token, calls the handler, and throws UnauthorizedError", async () => {
     tokenStorage.set("tok");
     const onUnauthorized = vi.fn();
     apiClient.setUnauthorizedHandler(onUnauthorized);

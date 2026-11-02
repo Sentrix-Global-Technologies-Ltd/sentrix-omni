@@ -1,5 +1,5 @@
 import Button from "../button/Button";
-import { ApiError } from "../../../services/api/errors";
+import { ApiError, userMessage } from "../../../services/api/errors";
 
 interface ErrorStateProps {
   error?: unknown;
@@ -7,14 +7,12 @@ interface ErrorStateProps {
   title?: string;
 }
 
-/** Shared error state. Surfaces the API message and an optional retry. */
+/** Shared error state. Shows the sanitised API message, a support reference, and an optional retry. */
 export default function ErrorState({ error, onRetry, title = "Something went wrong" }: ErrorStateProps) {
-  const message =
-    error instanceof ApiError
-      ? error.message
-      : error instanceof Error
-        ? error.message
-        : "An unexpected error occurred.";
+  // ApiError messages are already sanitised (see services/api/errors); any other
+  // thrown value (TypeError, render error) is never echoed to the user.
+  const message = userMessage(error, "An unexpected error occurred.");
+  const requestId = error instanceof ApiError ? error.requestId : undefined;
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
@@ -26,6 +24,9 @@ export default function ErrorState({ error, onRetry, title = "Something went wro
       <div>
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</p>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+        {requestId && (
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Reference: {requestId}</p>
+        )}
       </div>
       {onRetry && (
         <Button size="sm" variant="outline" onClick={onRetry}>

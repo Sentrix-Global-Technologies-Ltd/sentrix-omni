@@ -10,6 +10,7 @@ import { useOrganization } from "../../../context/OrganizationContext";
 import { useSubmitSupportTicket } from "../hooks/useSupportTicketActions";
 import { SUPPORT_TICKET_CATEGORY_OPTIONS } from "./supportTicketTone";
 import type { SupportTicketCategory } from "../api/support.types";
+import { userMessage } from "../../../services/api/errors";
 
 const selectClass =
   "h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800";
@@ -57,7 +58,7 @@ export default function ContactSupportButton() {
       reset();
       toast.success("Your message was sent to Sentrix support.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not submit your ticket.");
+      toast.error(userMessage(e, "Could not submit your ticket."));
     }
   };
 

@@ -8,6 +8,7 @@ import { useToast } from "../../../components/shared/toast";
 import { SUPPORT_TICKET_STATUS_OPTIONS } from "../../support/components/supportTicketTone";
 import { useTriageSupportTicket } from "../hooks/useTriageSupportTicket";
 import type { SupportTicket } from "../../support/api/support.types";
+import { userMessage } from "../../../services/api/errors";
 
 interface Props {
   ticket: SupportTicket | null;
@@ -49,7 +50,7 @@ export default function TriageTicketModal({ ticket, onClose }: Props) {
       toast.success("Ticket updated.");
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update the ticket.");
+      toast.error(userMessage(e, "Could not update the ticket."));
     }
   };
 

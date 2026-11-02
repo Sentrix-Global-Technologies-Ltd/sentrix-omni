@@ -5,6 +5,7 @@ import { useToast } from "../../../components/shared/toast";
 import { useFacilityActions } from "../hooks/useFacilityMap";
 import { MIN_ZONE_SIZE_PCT, rectanglesOverlap } from "../utils/coordinateHelpers";
 import type { FacilityZone } from "../api/facility.types";
+import { userMessage } from "../../../services/api/errors";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
@@ -156,7 +157,7 @@ export default function AddZoneModal({
       toast.success(`${name} added to ${buildingName}.`);
       close();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add zone.");
+      toast.error(userMessage(e, "Could not add zone."));
     }
   };
 

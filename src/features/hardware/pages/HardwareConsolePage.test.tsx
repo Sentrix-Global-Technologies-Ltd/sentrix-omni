@@ -26,6 +26,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { errorFromStatus } from "../../../services/api/errors";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -309,7 +310,7 @@ describe("HardwareConsolePage — successful registration", () => {
 
 describe("HardwareConsolePage — failed registration", () => {
   it("HCP-10: error toast shown and drawer stays open on failure", async () => {
-    mockRegisterMutateAsync.mockRejectedValue(new Error("Serial already in use."));
+    mockRegisterMutateAsync.mockRejectedValue(errorFromStatus(409, "Serial already in use."));
 
     const user = userEvent.setup();
     render(<HardwareConsolePage />);

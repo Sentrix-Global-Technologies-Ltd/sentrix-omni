@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import Button from "../../../components/ui/button/Button";
 import { useToast } from "../../../components/shared/toast";
 import { CloseIcon } from "../../../icons";
-import { ValidationError } from "../../../services/api/errors";
+import { ValidationError, userMessage } from "../../../services/api/errors";
 import { useUpdateCameraSource } from "../hooks/useCameraSourceActions";
 import { CAMERA_SOURCE_TYPES } from "./cameraSourceTypeMeta";
 import type { CameraSource } from "../api/camera-feeds.types";
@@ -108,7 +108,7 @@ export default function EditCameraSourceDrawer({ source, onClose }: Props) {
         }
         setFieldErrors(mapped);
       } else {
-        toast.error(e instanceof Error ? e.message : "Could not update camera source.");
+        toast.error(userMessage(e, "Could not update camera source."));
       }
     }
   };

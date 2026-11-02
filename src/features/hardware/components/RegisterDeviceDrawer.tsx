@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import Button from "../../../components/ui/button/Button";
 import { useToast } from "../../../components/shared/toast";
 import { CloseIcon } from "../../../icons";
-import { ValidationError } from "../../../services/api/errors";
+import { ValidationError, userMessage } from "../../../services/api/errors";
 import { useRegisterDevice } from "../hooks/useHardware";
 import { DEVICE_KINDS } from "../api/hardware.types";
 import type { DeviceKindValue } from "../api/hardware.types";
@@ -100,7 +100,7 @@ export default function RegisterDeviceDrawer({ open, onClose }: Props) {
         setFieldErrors(flat);
         toast.error(e.message);
       } else {
-        toast.error(e instanceof Error ? e.message : "Could not register device.");
+        toast.error(userMessage(e, "Could not register device."));
       }
     }
   };

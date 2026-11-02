@@ -17,6 +17,7 @@ import CameraSourceDetailDrawer from "../components/CameraSourceDetailDrawer";
 import CameraSourceKpiCard from "../components/CameraSourceKpiCard";
 import type { CameraSource } from "../api/camera-feeds.types";
 import "../styles/camera-sources.css";
+import { userMessage } from "../../../services/api/errors";
 
 /** Source types considered field / mobile — used by the "Field sources" additional filter. */
 const FIELD_SOURCE_TYPES = new Set(["phone", "dashcam", "smart_glasses"]);
@@ -184,7 +185,7 @@ export default function CameraSourcesPage() {
       await del.mutateAsync(source.id);
       toast.success(`${source.label} removed.`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not remove camera source.");
+      toast.error(userMessage(e, "Could not remove camera source."));
     }
   };
 

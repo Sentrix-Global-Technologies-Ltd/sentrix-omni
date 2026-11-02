@@ -6,6 +6,7 @@ import SecretRevealDialog from "../../../components/shared/SecretRevealDialog";
 import { useToast } from "../../../components/shared/toast";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { useOnboardBridge } from "../hooks/useSiteBridgeActions";
+import { userMessage } from "../../../services/api/errors";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
@@ -33,7 +34,7 @@ export default function OnboardBridgeButton() {
       setOpen(false);
       setSecret(res.data.bridge_key);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not onboard bridge.");
+      toast.error(userMessage(e, "Could not onboard bridge."));
     }
   };
 

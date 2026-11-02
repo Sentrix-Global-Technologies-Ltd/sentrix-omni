@@ -16,6 +16,7 @@ import { useDecideVerification } from "../hooks/useDecideVerification";
 import { useVerificationSelfie } from "../hooks/useVerificationSelfie";
 import { useRevealIdNumber } from "../hooks/useRevealIdNumber";
 import type { KycVerification } from "../api/verifications.types";
+import { userMessage } from "../../../services/api/errors";
 
 interface Props {
   verification: KycVerification | null;
@@ -65,7 +66,7 @@ export default function VerificationDetailModal({ verification, onClose }: Props
       toast.success(decision === "approved" ? "Verification approved." : "Verification rejected.");
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the decision.");
+      toast.error(userMessage(e, "Could not record the decision."));
     }
   };
 
@@ -74,7 +75,7 @@ export default function VerificationDetailModal({ verification, onClose }: Props
       const res = await revealIdNumber.mutateAsync(verification.id);
       setRevealedIdNumber(res.data.id_number);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not reveal the full ID number.");
+      toast.error(userMessage(e, "Could not reveal the full ID number."));
     }
   };
 

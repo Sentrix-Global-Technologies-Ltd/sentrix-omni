@@ -14,6 +14,7 @@ import RoadSegmentModal from "../components/RoadSegmentModal";
 import { useRoadRiskSegments } from "../hooks/useRoadRiskSegments";
 import { useRecomputeRoadSegment } from "../hooks/useRoadSegmentMutations";
 import type { RoadSegment } from "../api/road-risk.types";
+import { userMessage } from "../../../services/api/errors";
 
 interface PaginatorMeta {
   current_page?: number;
@@ -57,7 +58,7 @@ export default function RoadRiskPage() {
       await recompute.mutateAsync(segment.id);
       toast.success(`${segment.name} rescored.`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sentrix Core is unreachable right now — try again shortly.");
+      toast.error(userMessage(e, "Sentrix Core is unreachable right now — try again shortly."));
     }
   };
 

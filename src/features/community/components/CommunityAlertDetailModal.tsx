@@ -7,6 +7,7 @@ import { communityStatusTone, formatDateTime } from "./communityTone";
 import { useCommunityComments } from "../hooks/useCommunityAlerts";
 import { useDeleteCommunityComment, useResolveCommunityAlert } from "../hooks/useCommunityModeration";
 import type { PlatformCommunityAlert } from "../api/community.types";
+import { userMessage } from "../../../services/api/errors";
 
 interface Props {
   alert: PlatformCommunityAlert | null;
@@ -36,7 +37,7 @@ export default function CommunityAlertDetailModal({ alert, isOpen, onClose }: Pr
       toast.success("Report resolved and removed from the feed.");
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not resolve this report.");
+      toast.error(userMessage(e, "Could not resolve this report."));
     }
   };
 
@@ -46,7 +47,7 @@ export default function CommunityAlertDetailModal({ alert, isOpen, onClose }: Pr
       await deleteComment.mutateAsync({ alertId: alert.id, commentId });
       toast.success("Comment removed.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not delete this comment.");
+      toast.error(userMessage(e, "Could not delete this comment."));
     }
   };
 

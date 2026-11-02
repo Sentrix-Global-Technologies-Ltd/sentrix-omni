@@ -14,7 +14,7 @@
  */
 
 import { env } from "../../config/env";
-import { errorFromStatus, NetworkError } from "./errors";
+import { errorFromStatus, NetworkError, SAFE_MESSAGES, ServerError } from "./errors";
 import { tokenStorage } from "./tokenStorage";
 import type { ApiResult, Envelope } from "./types";
 
@@ -97,7 +97,7 @@ async function request<T>(
       body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
     });
   } catch {
-    throw new NetworkError("Could not reach the Sentrix API.", 0);
+    throw new NetworkError(SAFE_MESSAGES.network, 0);
   }
 
   if (response.status === 401) {
@@ -110,9 +110,14 @@ async function request<T>(
       }
     }
     // Refresh unavailable or failed — invalidate and notify so the app can
-    // redirect to sign-in regardless of which call tripped it.
-    tokenStorage.clear();
-    unauthorizedHandler?.();
+    // redirect to sign-in regardless of which call tripped it. Public calls
+    // (e.g. login with a bad password) have no session to invalidate: their 401
+    // is just a failed attempt and must not log the app out or clear tokens.
+    // The refresh call itself (auth:false + skipRefresh) still invalidates.
+    if (auth || skipRefresh) {
+      tokenStorage.clear();
+      unauthorizedHandler?.();
+    }
   }
 
   let payload: Envelope<T> | null = null;
@@ -127,9 +132,22 @@ async function request<T>(
 
   const failed = !response.ok || (payload?.success === false);
   if (failed) {
-    const message = payload?.message ?? "The request to Sentrix failed.";
-    const errors = payload?.errors ?? {};
-    throw errorFromStatus(response.status, message, errors);
+    // Only trust well-typed fields from the body; errorFromStatus decides what
+    // is safe to show (it never surfaces server text for 5xx).
+    const body = payload !== null && typeof payload === "object" ? payload : null;
+    throw errorFromStatus(
+      response.status,
+      typeof body?.message === "string" ? body.message : "",
+      body?.errors,
+      typeof body?.code === "string" ? body.code : undefined,
+      typeof body?.request_id === "string" ? body.request_id : undefined,
+    );
+  }
+
+  // A success status whose body is not the JSON envelope (an HTML error page
+  // from a proxy, a truncated body) is a malformed response, not empty data.
+  if (text && (payload === null || typeof payload !== "object")) {
+    throw new ServerError(SAFE_MESSAGES.generic, response.status, {}, "malformed_response");
   }
 
   return {

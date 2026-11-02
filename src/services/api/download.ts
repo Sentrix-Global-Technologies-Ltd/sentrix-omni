@@ -8,7 +8,7 @@
  */
 
 import { env } from "../../config/env";
-import { errorFromStatus, NetworkError } from "./errors";
+import { errorFromStatus, NetworkError, SAFE_MESSAGES } from "./errors";
 import { tokenStorage } from "./tokenStorage";
 
 type QueryValue = string | number | boolean | undefined | null;
@@ -50,7 +50,7 @@ export async function downloadFile(path: string, options: DownloadOptions = {}):
   try {
     response = await fetch(buildUrl(path, query), { method: "GET", headers });
   } catch {
-    throw new NetworkError("Could not reach the Sentrix API.", 0);
+    throw new NetworkError(SAFE_MESSAGES.network, 0);
   }
 
   if (!response.ok) {

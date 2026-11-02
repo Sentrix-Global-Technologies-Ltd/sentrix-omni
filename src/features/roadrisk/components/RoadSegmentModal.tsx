@@ -8,6 +8,7 @@ import Can from "../../../components/shared/Can";
 import { useToast } from "../../../components/shared/toast";
 import { useCreateRoadSegment, useUpdateRoadSegment } from "../hooks/useRoadSegmentMutations";
 import type { RoadSegment } from "../api/road-risk.types";
+import { userMessage } from "../../../services/api/errors";
 
 interface Props {
   /** null = create a new segment; a RoadSegment = editing that one. */
@@ -73,7 +74,7 @@ export default function RoadSegmentModal({ segment, isOpen, onClose }: Props) {
       }
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save the segment.");
+      toast.error(userMessage(e, "Could not save the segment."));
     }
   };
 

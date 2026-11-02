@@ -5,6 +5,7 @@ import { useToast } from "../../../components/shared/toast";
 import { CloseIcon } from "../../../icons";
 import { useCreateCameraSource } from "../hooks/useCameraSourceActions";
 import { CAMERA_SOURCE_TYPES, type CameraSourceTypeMeta } from "./cameraSourceTypeMeta";
+import { userMessage } from "../../../services/api/errors";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
@@ -75,7 +76,7 @@ export default function AddCameraSourceDrawer({ open, onClose }: Props) {
       toast.success(`${picked.label} added.`);
       close();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add camera source.");
+      toast.error(userMessage(e, "Could not add camera source."));
     }
   };
 

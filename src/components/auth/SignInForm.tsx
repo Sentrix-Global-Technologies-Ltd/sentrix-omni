@@ -6,7 +6,7 @@ import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 import { useAuth } from "../../context/AuthContext";
-import { ApiError } from "../../services/api/errors";
+import { userMessage } from "../../services/api/errors";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +31,9 @@ export default function SignInForm() {
           ?.pathname ?? "/";
       navigate(from, { replace: true });
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Sign-in failed. Please try again.",
-      );
+      // ApiError messages are already sanitised (services/api/errors); anything
+      // else gets a generic sentence, never the raw exception text.
+      setError(userMessage(err, "Sign-in failed. Please try again."));
     } finally {
       setSubmitting(false);
     }

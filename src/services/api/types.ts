@@ -11,6 +11,10 @@ export interface Envelope<T> {
   message?: string;
   data?: T;
   errors?: Record<string, string[]>;
+  /** Stable machine-readable error code (error responses only). */
+  code?: string;
+  /** Correlation ID for tracing a failure in server logs (error responses only). */
+  request_id?: string;
   meta?: Record<string, unknown>;
   links?: Record<string, unknown>;
 }

@@ -19,6 +19,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { errorFromStatus } from "../../../services/api/errors";
 import { render as rtlRender, screen, waitFor, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router";
@@ -270,7 +271,8 @@ describe("CameraSourcesPage — edit workflow", () => {
 
   /* ── CSP-7 ─────────────────────────────────────────────────────────────── */
   it("CSP-7: generic API error shows error toast and leaves drawer open", async () => {
-    mockUpdateMutateAsync.mockRejectedValueOnce(new Error("Network error"));
+    // A realistic API failure: an ApiError whose (4xx) message is user-safe.
+    mockUpdateMutateAsync.mockRejectedValueOnce(errorFromStatus(409, "Network error"));
 
     const user = userEvent.setup();
     render(<CameraSourcesPage />);

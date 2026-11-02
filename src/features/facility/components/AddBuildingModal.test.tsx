@@ -7,6 +7,7 @@
  */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { errorFromStatus, SAFE_MESSAGES } from "../../../services/api/errors";
 import AddBuildingModal from "./AddBuildingModal";
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
@@ -121,7 +122,8 @@ describe("AddBuildingModal", () => {
 
   // AM7: failed save — error toast shown, modal stays open (user can retry)
   it("AM7 — failed save shows error toast and keeps modal open", async () => {
-    mockMutateAsync.mockRejectedValue(new Error("Server error"));
+    // A 5xx carries server text that must NOT reach the user.
+    mockMutateAsync.mockRejectedValue(errorFromStatus(500, "Server error: SQLSTATE[42P01] relation \"buildings\" does not exist"));
     const onClose = vi.fn();
     renderModal({ onClose });
     fireEvent.change(screen.getByPlaceholderText("Building A"), {
@@ -129,7 +131,8 @@ describe("AddBuildingModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /add building/i }));
     await waitFor(() => expect(mockError).toHaveBeenCalledOnce());
-    expect(mockError).toHaveBeenCalledWith("Server error");
+    expect(mockError).toHaveBeenCalledWith(SAFE_MESSAGES.generic);
+    expect(mockError).not.toHaveBeenCalledWith(expect.stringMatching(/SQLSTATE|relation/));
     // Modal did NOT close — user can retry
     expect(onClose).not.toHaveBeenCalled();
   });

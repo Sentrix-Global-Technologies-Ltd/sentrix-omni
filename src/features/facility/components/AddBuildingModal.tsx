@@ -3,6 +3,7 @@ import { Modal } from "../../../components/ui/modal";
 import Button from "../../../components/ui/button/Button";
 import { useToast } from "../../../components/shared/toast";
 import { useFacilityActions } from "../hooks/useFacilityMap";
+import { userMessage } from "../../../services/api/errors";
 
 const fieldClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90";
@@ -69,7 +70,7 @@ export default function AddBuildingModal({ open, onClose, initialRect }: Props) 
       toast.success(`${name} added to the map.`);
       close();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add building.");
+      toast.error(userMessage(e, "Could not add building."));
     }
   };
 

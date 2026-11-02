@@ -11,7 +11,7 @@
  */
 
 import { env } from "../../config/env";
-import { errorFromStatus, NetworkError } from "./errors";
+import { errorFromStatus, NetworkError, SAFE_MESSAGES } from "./errors";
 import { tokenStorage } from "./tokenStorage";
 
 export async function fetchAuthenticatedImageUrl(path: string): Promise<string> {
@@ -23,7 +23,7 @@ export async function fetchAuthenticatedImageUrl(path: string): Promise<string> 
   try {
     response = await fetch(`${env.apiBaseUrl}/${path.replace(/^\/+/, "")}`, { method: "GET", headers });
   } catch {
-    throw new NetworkError("Could not reach the Sentrix API.", 0);
+    throw new NetworkError(SAFE_MESSAGES.network, 0);
   }
 
   if (!response.ok) {
