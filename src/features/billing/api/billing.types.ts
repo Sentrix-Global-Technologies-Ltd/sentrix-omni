@@ -7,11 +7,43 @@ export interface Subscription {
   plan_key: string;
   plan_name: string;
   status: string;
+  /** Stored status, except a paid plan past its period end reads "expired". */
+  derived_status?: string;
   auto_renew: boolean;
   payment_method: string | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
   entitlements: unknown;
+}
+
+/** What picking a plan means for THIS organization right now (server rules). */
+export type PlanChangeAction =
+  | "current"
+  | "subscribe"
+  | "renew"
+  | "upgrade"
+  | "downgrade_now"
+  | "cancel_at_period_end"
+  | "scheduled_downgrade";
+
+export interface PlanOption {
+  key: string;
+  name: string;
+  action: PlanChangeAction;
+  allowed: boolean;
+  immediate: boolean;
+  /** Button text, e.g. "Upgrade & pay" or "Available from 4 Nov 2027". */
+  label: string;
+  /** Why it is not available / what will happen, when worth saying. */
+  reason: string | null;
+  effective_at: string | null;
+  price: {
+    currency: string;
+    subtotal_cents: number;
+    credit_cents: number;
+    tax_cents: number;
+    amount_cents: number;
+  };
 }
 
 /* ------------------------------------------------------------------ */

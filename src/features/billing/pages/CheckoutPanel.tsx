@@ -2,12 +2,12 @@ import { useState } from "react";
 import Button from "../../../components/ui/button/Button";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
-import { formatMoney } from "../../../lib/format";
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
 import { useCheckoutActions, useCheckoutStatus } from "../hooks/useBilling";
 import { isHostedCheckoutUrl } from "./hostedCheckout";
-import type { Plan } from "../api/billing.types";
+import { describeOption } from "./planOptionCopy";
+import type { Plan, PlanOption } from "../api/billing.types";
 
 const card =
   "rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6";
@@ -26,7 +26,7 @@ function paymentTone(s: string): "success" | "warning" | "error" | "light" {
  * money actually moves), so the pending checkout can be advanced to
  * completion without leaving the console.
  */
-export default function CheckoutPanel({ plan }: { plan: Plan }) {
+export default function CheckoutPanel({ plan, option }: { plan: Plan; option: PlanOption }) {
   const [reference, setReference] = useState<string | null>(null);
   const toast = useToast();
   const { checkout, simulate } = useCheckoutActions();
@@ -89,10 +89,10 @@ export default function CheckoutPanel({ plan }: { plan: Plan }) {
 
   return (
     <ConfirmActionButton
-      label="Upgrade & pay"
-      title={`Start checkout for ${plan.name}?`}
-      description={`You will be taken to our payment provider to pay ${formatMoney(plan.amount_cents ?? plan.price_cents, plan.currency)} (VAT included) for the ${plan.name} plan, billed per ${plan.interval}.`}
-      confirmLabel="Start checkout"
+      label={option.label}
+      title={`${option.label}: ${plan.name}?`}
+      description={describeOption(plan, option)}
+      confirmLabel="Continue to payment"
       onConfirm={handleCheckout}
     />
   );

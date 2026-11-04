@@ -3,6 +3,9 @@
  * BCP-2  View opens that invoice's PDF; Download downloads it.
  * BCP-3  A failed PDF request shows an error toast instead of failing silently.
  * BCP-4  Plan prices use the fit-to-card sizing and show the VAT line.
+ * BCP-5  A change the server forbids (Annual → Monthly mid-term) shows its label and reason, with no pay button.
+ * BCP-6  Allowed changes render the checkout action with the server's option.
+ * BCP-7  An expired paid plan reads "Expired", not "Renews".
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -13,7 +16,11 @@ import BillingConsolePage from "./BillingConsolePage";
 
 vi.mock("../../../components/common/PageMeta", () => ({ default: () => null }));
 vi.mock("../../../context/OrganizationContext", () => ({ useOrganization: () => ({ activeId: "org-1" }) }));
-vi.mock("./CheckoutPanel", () => ({ default: () => null }));
+vi.mock("./CheckoutPanel", () => ({
+  default: ({ plan, option }: { plan: { key: string }; option: { label: string } }) => (
+    <button type="button" data-testid={`pay-${plan.key}`}>{option.label}</button>
+  ),
+}));
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("../../../components/shared/toast", () => ({ useToast: () => toast }));
@@ -25,6 +32,7 @@ const hooks = vi.hoisted(() => ({
   useBillingActions: vi.fn(),
   useInvoicePdfActions: vi.fn(),
   useCheckoutStatus: vi.fn(),
+  usePlanOptions: vi.fn(),
 }));
 vi.mock("../hooks/useBilling", () => hooks);
 
@@ -33,6 +41,14 @@ const download = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  hooks.usePlanOptions.mockReturnValue({
+    data: {
+      data: [
+        { key: "free", name: "Free", action: "current", allowed: false, immediate: false, label: "Current plan", reason: null, effective_at: null, price: { currency: "NGN", subtotal_cents: 0, credit_cents: 0, tax_cents: 0, amount_cents: 0 } },
+        { key: "pro_annual", name: "Pro Annual", action: "subscribe", allowed: true, immediate: true, label: "Subscribe & pay", reason: null, effective_at: null, price: { currency: "NGN", subtotal_cents: 500000000, credit_cents: 0, tax_cents: 37500000, amount_cents: 537500000 } },
+      ],
+    },
+  });
   hooks.useCheckoutStatus.mockReturnValue({ data: undefined, isFetching: false, isError: false, refetch: vi.fn() });
   hooks.useSubscription.mockReturnValue({
     data: { data: { plan_key: "free", plan_name: "Free", status: "active", auto_renew: true, entitlements: [] } },
@@ -116,5 +132,41 @@ describe("BillingConsolePage", () => {
     expect(price.className).toMatch(/ic-stat-value--fit/);
     expect(price.className).toMatch(/ic-stat-value--(sm|xs)/);
     expect(screen.getByText(/VAT =/).textContent).toMatch(/at checkout/);
+  });
+
+  it("BCP-5 a forbidden change shows its label and reason, no pay button", () => {
+    hooks.useSubscription.mockReturnValue({
+      data: { data: { plan_key: "pro_annual", plan_name: "Pro Annual", status: "active", derived_status: "active", auto_renew: true, entitlements: [], current_period_end: "2027-11-04T10:00:00Z" } },
+      isLoading: false,
+    });
+    hooks.usePlans.mockReturnValue({
+      data: { data: [{ key: "pro_monthly", name: "Pro Monthly", price_cents: 50000000, price: "500,000.00", currency: "NGN", interval: "month", popular: false, entitlements: [] }] },
+    });
+    hooks.usePlanOptions.mockReturnValue({
+      data: {
+        data: [
+          { key: "pro_monthly", name: "Pro Monthly", action: "scheduled_downgrade", allowed: false, immediate: false, label: "Available from 4 Nov 2027", reason: "You're on Pro Annual until 4 Nov 2027. Pro Monthly becomes available when your plan ends.", effective_at: "2027-11-04T10:00:00Z", price: { currency: "NGN", subtotal_cents: 0, credit_cents: 0, tax_cents: 0, amount_cents: 0 } },
+        ],
+      },
+    });
+    setup();
+    expect(screen.getByRole("button", { name: "Available from 4 Nov 2027" })).toBeDisabled();
+    expect(screen.getByText(/becomes available when your plan ends/)).toBeInTheDocument();
+    expect(screen.queryByTestId("pay-pro_monthly")).toBeNull();
+  });
+
+  it("BCP-6 an allowed change renders the checkout action", () => {
+    setup();
+    expect(screen.getByTestId("pay-pro_annual")).toHaveTextContent("Subscribe & pay");
+  });
+
+  it("BCP-7 an expired plan reads Expired, not Renews", () => {
+    hooks.useSubscription.mockReturnValue({
+      data: { data: { plan_key: "pro_monthly", plan_name: "Pro Monthly", status: "active", derived_status: "expired", auto_renew: true, entitlements: [], current_period_end: "2026-10-01T10:00:00Z" } },
+      isLoading: false,
+    });
+    setup();
+    expect(screen.getByText(/^Expired/)).toBeInTheDocument();
+    expect(screen.queryByText(/Renews/)).toBeNull();
   });
 });

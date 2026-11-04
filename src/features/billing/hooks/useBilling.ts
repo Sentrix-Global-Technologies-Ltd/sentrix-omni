@@ -29,6 +29,16 @@ export function usePlans() {
   });
 }
 
+/** Server-computed meaning of each plan for the active organization. */
+export function usePlanOptions() {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: billingKeys.planOptions(activeId ?? ""),
+    queryFn: () => billingApi.planOptions(activeId as string),
+    enabled: Boolean(activeId),
+  });
+}
+
 export function useInvoices() {
   const { activeId } = useOrganization();
   return useQuery({

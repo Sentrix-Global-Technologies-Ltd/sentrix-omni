@@ -6,7 +6,7 @@ import ConfirmActionButton from "../../../components/shared/ConfirmActionButton"
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import { formatDateTime, formatMoney } from "../../../lib/format";
 import { useOrganization } from "../../../context/OrganizationContext";
-import { useBillingActions, useInvoicePdfActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
+import { useBillingActions, useInvoicePdfActions, useInvoices, usePlanOptions, usePlans, useSubscription } from "../hooks/useBilling";
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
 import { valueSizeClass } from "../../../components/shared/fitText";
@@ -36,7 +36,7 @@ function subscriptionAccent(status?: string): "success" | "warning" | "critical"
 function statusTone(s: string): "success" | "warning" | "error" | "light" {
   if (s === "active") return "success";
   if (s === "trialing" || s === "past_due" || s === "pending") return "warning";
-  if (s === "cancelled" || s === "canceled") return "error";
+  if (s === "cancelled" || s === "canceled" || s === "expired") return "error";
   return "light";
 }
 
@@ -44,6 +44,7 @@ export default function BillingConsolePage() {
   const { activeId } = useOrganization();
   const subQuery = useSubscription();
   const plansQuery = usePlans();
+  const optionsQuery = usePlanOptions();
   const invoicesQuery = useInvoices();
   const { subscribe, cancel, autoRenew } = useBillingActions();
   const pdf = useInvoicePdfActions();
@@ -54,6 +55,9 @@ export default function BillingConsolePage() {
 
   const sub = subQuery.data?.data;
   const plans = plansQuery.data?.data ?? [];
+  const optionsByKey = new Map((optionsQuery.data?.data ?? []).map((o) => [o.key, o]));
+  // The stored status never turns "expired" by itself; the server derives it.
+  const status = sub?.derived_status ?? sub?.status;
   const invoices = invoicesQuery.data?.data ?? [];
   const entitlements = Array.isArray(sub?.entitlements) ? (sub?.entitlements as string[]) : [];
 
@@ -138,11 +142,20 @@ export default function BillingConsolePage() {
               {sub?.plan_name ?? (subQuery.isLoading ? "…" : "—")}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-theme-sm text-gray-500 dark:text-gray-400">
-              {sub && <StatusBadge tone={statusTone(sub.status)}>{sub.status}</StatusBadge>}
+              {sub && status && <StatusBadge tone={statusTone(status)}>{status}</StatusBadge>}
               {sub?.status === "trialing" && sub.trial_ends_at && (
                 <span>Trial ends {formatDateTime(sub.trial_ends_at)}</span>
               )}
-              {sub?.current_period_end && <span>Renews {formatDateTime(sub.current_period_end)}</span>}
+              {sub?.current_period_end && (
+                <span>
+                  {status === "expired"
+                    ? "Expired"
+                    : status === "cancelled"
+                      ? "Ends"
+                      : "Active until"}{" "}
+                  {formatDateTime(sub.current_period_end)}
+                </span>
+              )}
               {sub?.payment_method && <span>· {sub.payment_method}</span>}
             </div>
             {entitlements.length > 0 && (
@@ -193,13 +206,17 @@ export default function BillingConsolePage() {
       <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">Plans</h3>
       <div className="mb-6 grid grid-cols-12 gap-4 md:gap-6">
         {plans.map((p) => {
+          const opt = optionsByKey.get(p.key);
           const current = sub?.plan_key === p.key;
           return (
             <div key={p.key} className="col-span-12 sm:col-span-6 xl:col-span-4">
               <div className={`${accentCard} h-full`}>
                 <div className="flex w-full items-center justify-between">
                   <h4 className="font-semibold text-gray-800 dark:text-white/90">{p.name}</h4>
-                  {p.popular && <StatusBadge tone="primary">Popular</StatusBadge>}
+                  <span className="flex items-center gap-1">
+                    {current && <StatusBadge tone="success">Current</StatusBadge>}
+                    {p.popular && <StatusBadge tone="primary">Popular</StatusBadge>}
+                  </span>
                 </div>
                 <p className={`mt-2 ${valueSizeClass(formatMoney(p.price_cents, p.currency))}`}>
                   {formatMoney(p.price_cents, p.currency)}
@@ -219,34 +236,42 @@ export default function BillingConsolePage() {
                   </ul>
                 )}
                 <div className="mt-4">
-                  {current ? (
+                  {!opt ? null : opt.action === "current" ? (
                     <Button size="sm" variant="outline" disabled>
                       Current plan
                     </Button>
-                  ) : p.price_cents === 0 ? (
-                    // Free has no payment to collect — switch takes effect
-                    // immediately, no PSP checkout step at all.
+                  ) : !opt.allowed ? (
+                    // The server says this change isn't available right now —
+                    // show why instead of a button that would only fail.
+                    <>
+                      <Button size="sm" variant="outline" disabled>
+                        {opt.label}
+                      </Button>
+                      {opt.reason && (
+                        <p className="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">{opt.reason}</p>
+                      )}
+                    </>
+                  ) : opt.action === "downgrade_now" ? (
                     <div className="flex flex-wrap gap-2">
                       <ConfirmActionButton
-                        label={`Switch to ${p.name}`}
+                        label={opt.label}
                         triggerVariant="primary"
                         title={`Switch to ${p.name}?`}
-                        description="You'll be moved to the free plan immediately, effective now."
+                        description="You'll be moved to the free plan immediately. Your paid period has ended, so nothing is lost."
                         confirmLabel="Switch"
                         successMessage="Plan updated"
                         onConfirm={() => subscribe.mutateAsync(p.key)}
                       />
                     </div>
-                  ) : null}
+                  ) : (
+                    <>
+                      <CheckoutPanel plan={p} option={opt} />
+                      {opt.reason && (
+                        <p className="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">{opt.reason}</p>
+                      )}
+                    </>
+                  )}
                 </div>
-                {/*
-                  Paid plans go through PSP checkout only — a direct "switch"
-                  call would blind-charge the payment provider, which real
-                  gateways (e.g. Paystack) can't do without a prior saved
-                  authorization and honestly report as failed. Checkout is the
-                  one path that actually works for a real paid upgrade.
-                */}
-                {!current && p.price_cents > 0 && <CheckoutPanel plan={p} />}
                 <div className={`ic-stat-accent ic-stat-accent--${planAccent(p.key, p.popular)}`} />
               </div>
             </div>
