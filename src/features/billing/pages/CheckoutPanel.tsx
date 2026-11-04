@@ -5,6 +5,7 @@ import ConfirmActionButton from "../../../components/shared/ConfirmActionButton"
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
 import { useCheckoutActions, useCheckoutStatus } from "../hooks/useBilling";
+import { isHostedCheckoutUrl } from "./hostedCheckout";
 import type { Plan } from "../api/billing.types";
 
 const card =
@@ -33,6 +34,14 @@ export default function CheckoutPanel({ plan }: { plan: Plan }) {
 
   const handleCheckout = async () => {
     const result = await checkout.mutateAsync({ planKey: plan.key });
+    // A real PSP (Paystack) returns an absolute hosted-checkout URL: send the
+    // user there; the PSP returns them to the billing page with the reference.
+    // The stub provider returns a relative sandbox path — stay on the pending
+    // panel (simulate / check status) in that case.
+    if (isHostedCheckoutUrl(result.data.checkout_url)) {
+      window.location.assign(result.data.checkout_url);
+      return;
+    }
     setReference(result.data.reference);
   };
 

@@ -63,12 +63,27 @@ export function useBillingActions() {
  * completion helper (dev/test only, activates the subscription in place of a
  * real PSP redirect).
  */
-export function useCheckoutStatus(reference: string | null) {
+const TERMINAL_PAYMENT_STATUSES = ["paid", "succeeded", "completed", "failed", "cancelled", "canceled"];
+const MAX_STATUS_POLLS = 40;
+
+/**
+ * Polls a checkout by reference. With `poll`, keeps refetching every 3s while
+ * the payment is still pending (the PSP webhook confirms it asynchronously)
+ * and stops once it reaches a terminal state or after MAX_STATUS_POLLS tries.
+ */
+export function useCheckoutStatus(reference: string | null, options: { poll?: boolean } = {}) {
   const { activeId } = useOrganization();
   return useQuery({
     queryKey: billingKeys.checkout(activeId ?? "", reference ?? ""),
     queryFn: () => billingApi.checkoutStatus(activeId as string, reference as string),
     enabled: Boolean(activeId) && Boolean(reference),
+    refetchInterval: options.poll
+      ? (query) => {
+          const status = query.state.data?.data?.status;
+          if (status && TERMINAL_PAYMENT_STATUSES.includes(status)) return false;
+          return query.state.dataUpdateCount >= MAX_STATUS_POLLS ? false : 3000;
+        }
+      : false,
   });
 }
 

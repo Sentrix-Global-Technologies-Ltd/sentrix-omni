@@ -8,6 +8,7 @@ import { formatDateTime } from "../../../lib/format";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { useBillingActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
 import CheckoutPanel from "./CheckoutPanel";
+import CheckoutReturnBanner from "./CheckoutReturnBanner";
 import type { Invoice } from "../api/billing.types";
 
 const card =
@@ -77,6 +78,8 @@ export default function BillingConsolePage() {
     <>
       <PageMeta title="Billing | Sentrix Console" description="Subscription & billing" />
       <PageHeader title="Billing" breadcrumbs={[{ label: "Billing" }]} />
+
+      <CheckoutReturnBanner />
 
       {/* Current subscription */}
       <div className={`${card} mb-6`}>
