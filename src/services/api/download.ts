@@ -38,7 +38,7 @@ function filenameFromDisposition(value: string | null): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-export async function downloadFile(path: string, options: DownloadOptions = {}): Promise<void> {
+async function fetchBlob(path: string, options: DownloadOptions): Promise<{ blob: Blob; name: string }> {
   const { query, organizationId, filename } = options;
 
   const headers: Record<string, string> = { Accept: "*/*" };
@@ -59,7 +59,10 @@ export async function downloadFile(path: string, options: DownloadOptions = {}):
 
   const blob = await response.blob();
   const name = filename ?? filenameFromDisposition(response.headers.get("Content-Disposition")) ?? "download";
+  return { blob, name };
+}
 
+function saveBlob(blob: Blob, name: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = objectUrl;
@@ -68,4 +71,34 @@ export async function downloadFile(path: string, options: DownloadOptions = {}):
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+export async function downloadFile(path: string, options: DownloadOptions = {}): Promise<void> {
+  const { blob, name } = await fetchBlob(path, options);
+  saveBlob(blob, name);
+}
+
+/**
+ * Fetch an authenticated file and show it in a NEW browser window/tab (e.g. a
+ * PDF in the browser's viewer, which has its own download button). The window
+ * is opened synchronously on the click — before the network round-trip — so
+ * popup blockers allow it; it is then pointed at the blob once it arrives.
+ * If the window was blocked, falls back to a normal download.
+ */
+export async function openFileInNewWindow(path: string, options: DownloadOptions = {}): Promise<void> {
+  const win = window.open("", "_blank");
+  try {
+    const { blob, name } = await fetchBlob(path, options);
+    if (!win) {
+      saveBlob(blob, name);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    win.location.href = objectUrl;
+    // Keep the URL alive long enough for the viewer to load it.
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
+  } catch (err) {
+    win?.close();
+    throw err;
+  }
 }

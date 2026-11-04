@@ -125,10 +125,10 @@ describe("SubscriptionsOverviewPage (SuperAdmin billing console)", () => {
     renderPage();
     expect(screen.getByRole("heading", { name: "Billing & Subscriptions" })).toBeInTheDocument();
     const cards = within(screen.getByRole("region", { name: "Billing summary" }));
-    expect(cards.getByText("Paying").closest("div")).toHaveTextContent("3");
-    expect(cards.getByText("Expired").closest("div")).toHaveTextContent("2");
-    expect(cards.getByText("Abandoned checkouts").closest("div")).toHaveTextContent("2");
-    expect(cards.getByText("Revenue, last 30 days").closest("div")).toHaveTextContent("$50.00");
+    expect(cards.getByText("Paying").closest(".ic-stat-card")).toHaveTextContent("3");
+    expect(cards.getByText("Expired").closest(".ic-stat-card")).toHaveTextContent("2");
+    expect(cards.getByText("Abandoned checkouts").closest(".ic-stat-card")).toHaveTextContent("2");
+    expect(cards.getByText("Revenue, last 30 days").closest(".ic-stat-card")).toHaveTextContent("$50.00");
   });
 
   it("SBC-2 lists organizations with derived status and fetches only that segment", () => {

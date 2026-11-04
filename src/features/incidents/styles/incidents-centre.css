@@ -87,6 +87,14 @@
 .ic-stat-accent--success  { background: #10b981; }
 .ic-stat-accent--neutral  { background: #6b7280; }
 
+/* Fit-to-card value sizes: long amounts shrink (and wrap as a last resort)
+   instead of overflowing the card. Used by AccentStatCard / billing cards. */
+.ic-stat-card--fit { min-width: 0; }
+.ic-stat-value--fit { line-height: 1.15; overflow-wrap: anywhere; min-width: 0; }
+.ic-stat-value--md { font-size: 1.4rem; }
+.ic-stat-value--sm { font-size: 1.15rem; }
+.ic-stat-value--xs { font-size: 0.95rem; }
+
 /* loading skeleton for stat value */
 .ic-stat-skeleton {
   display: inline-block;

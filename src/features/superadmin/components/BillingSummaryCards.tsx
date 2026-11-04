@@ -1,4 +1,4 @@
-import StatCard from "../../../components/shared/StatCard";
+import AccentStatCard from "../../../components/shared/AccentStatCard";
 import { formatMoney } from "../../../lib/format";
 import type {
   PlatformBillingRevenueRow,
@@ -26,19 +26,31 @@ export default function BillingSummaryCards({ segment, summary, isLoading }: Pro
   const noun = segment === "organizations" ? "Organizations" : "Individuals";
 
   return (
-    <div role="region" aria-label="Billing summary" className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-      <StatCard label={noun} value={counts?.total ?? 0} loading={isLoading} />
-      <StatCard label="Paying" value={counts?.paying ?? 0} tone="success" loading={isLoading} />
-      <StatCard label="Trialing" value={counts?.by_status.trialing ?? 0} tone="info" loading={isLoading} />
-      <StatCard label="Expired" value={counts?.by_status.expired ?? 0} tone="warning" loading={isLoading} />
-      <StatCard label="Cancelled" value={counts?.by_status.cancelled ?? 0} tone="error" loading={isLoading} />
-      <StatCard
-        label="Revenue, last 30 days"
-        value={revenueLabel(revenue, (r) => r.paid_last_30_days_cents)}
+    <div
+      role="region"
+      aria-label="Billing summary"
+      className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      <AccentStatCard
+        label={noun}
+        value={counts?.total ?? 0}
+        accent="neutral"
+        sub={segment === "organizations" ? "Customer organizations" : "With a billing record"}
         loading={isLoading}
       />
-      <StatCard label="Failed payments" value={payments?.failed ?? 0} tone="error" loading={isLoading} />
-      <StatCard label="Abandoned checkouts" value={payments?.abandoned ?? 0} tone="warning" loading={isLoading} />
+      <AccentStatCard label="Paying" value={counts?.paying ?? 0} accent="success" sub="On a paid plan" loading={isLoading} />
+      <AccentStatCard label="Trialing" value={counts?.by_status.trialing ?? 0} accent="info" sub="In free trial" loading={isLoading} />
+      <AccentStatCard label="Expired" value={counts?.by_status.expired ?? 0} accent="warning" sub="Needs renewal" loading={isLoading} />
+      <AccentStatCard label="Cancelled" value={counts?.by_status.cancelled ?? 0} accent="critical" sub="Will not renew" loading={isLoading} />
+      <AccentStatCard
+        label="Revenue, last 30 days"
+        value={revenueLabel(revenue, (r) => r.paid_last_30_days_cents)}
+        accent="success"
+        sub="Paid payments"
+        loading={isLoading}
+      />
+      <AccentStatCard label="Failed payments" value={payments?.failed ?? 0} accent="critical" sub="Declined or errored" loading={isLoading} />
+      <AccentStatCard label="Abandoned checkouts" value={payments?.abandoned ?? 0} accent="warning" sub="Unpaid after 24 hours" loading={isLoading} />
     </div>
   );
 }

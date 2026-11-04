@@ -87,6 +87,20 @@ export function useCheckoutStatus(reference: string | null, options: { poll?: bo
   });
 }
 
+/** Invoice PDF actions for the active organization (open in new window / download). */
+export function useInvoicePdfActions() {
+  const { activeId } = useOrganization();
+  return {
+    open: useMutation({
+      mutationFn: (invoiceId: string) => billingApi.openInvoicePdf(activeId as string, invoiceId),
+    }),
+    download: useMutation({
+      mutationFn: (invoice: { id: string; number: string }) =>
+        billingApi.downloadInvoicePdf(activeId as string, invoice),
+    }),
+  };
+}
+
 export function useCheckoutActions() {
   const { activeId } = useOrganization();
   const onSuccess = useOrgInvalidate();

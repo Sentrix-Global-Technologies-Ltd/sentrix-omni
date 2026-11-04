@@ -6,13 +6,32 @@ import ConfirmActionButton from "../../../components/shared/ConfirmActionButton"
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import { formatDateTime, formatMoney } from "../../../lib/format";
 import { useOrganization } from "../../../context/OrganizationContext";
-import { useBillingActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
+import { useBillingActions, useInvoicePdfActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
+import { useToast } from "../../../components/shared/toast";
+import { ApiError } from "../../../services/api/errors";
+import { valueSizeClass } from "../../../components/shared/fitText";
+import "../../incidents/styles/incidents-centre.css";
 import CheckoutPanel from "./CheckoutPanel";
 import CheckoutReturnBanner from "./CheckoutReturnBanner";
 import type { Invoice } from "../api/billing.types";
 
 const card =
   "rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6";
+
+/** Same card chrome as the Incidents KPI cards: bordered, with a coloured accent bar along the bottom. */
+const accentCard = "ic-stat-card ic-stat-card--fit !gap-0 !p-5 !pb-6 md:!p-6 md:!pb-7";
+
+function planAccent(key: string, popular: boolean): "neutral" | "info" | "success" {
+  if (key === "free") return "neutral";
+  return popular ? "success" : "info";
+}
+
+function subscriptionAccent(status?: string): "success" | "warning" | "critical" | "neutral" {
+  if (status === "active") return "success";
+  if (status === "trialing" || status === "past_due" || status === "pending") return "warning";
+  if (status === "cancelled" || status === "canceled" || status === "expired") return "critical";
+  return "neutral";
+}
 
 function statusTone(s: string): "success" | "warning" | "error" | "light" {
   if (s === "active") return "success";
@@ -27,6 +46,11 @@ export default function BillingConsolePage() {
   const plansQuery = usePlans();
   const invoicesQuery = useInvoices();
   const { subscribe, cancel, autoRenew } = useBillingActions();
+  const pdf = useInvoicePdfActions();
+  const toast = useToast();
+
+  const pdfError = (err: unknown) =>
+    toast.error(err instanceof ApiError ? err.message : "Could not load the invoice. Please try again.");
 
   const sub = subQuery.data?.data;
   const plans = plansQuery.data?.data ?? [];
@@ -72,6 +96,30 @@ export default function BillingConsolePage() {
       header: "Issued",
       render: (i) => <span className="text-gray-500 dark:text-gray-400">{formatDateTime(i.issued_at)}</span>,
     },
+    {
+      key: "pdf",
+      header: "Invoice PDF",
+      render: (i) => (
+        <span className="flex items-center gap-3 text-theme-sm">
+          <button
+            type="button"
+            className="font-medium text-brand-500 hover:underline disabled:opacity-50"
+            disabled={pdf.open.isPending}
+            onClick={() => pdf.open.mutate(i.id, { onError: pdfError })}
+          >
+            View
+          </button>
+          <button
+            type="button"
+            className="font-medium text-gray-600 hover:underline disabled:opacity-50 dark:text-gray-300"
+            disabled={pdf.download.isPending}
+            onClick={() => pdf.download.mutate(i, { onError: pdfError })}
+          >
+            Download
+          </button>
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -82,8 +130,8 @@ export default function BillingConsolePage() {
       <CheckoutReturnBanner />
 
       {/* Current subscription */}
-      <div className={`${card} mb-6`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className={`${accentCard} mb-6`}>
+        <div className="flex w-full flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Current plan</h3>
             <p className="mt-1 text-title-sm font-bold text-gray-800 dark:text-white/90">
@@ -138,6 +186,7 @@ export default function BillingConsolePage() {
             </div>
           )}
         </div>
+        <div className={`ic-stat-accent ic-stat-accent--${subscriptionAccent(sub?.status)}`} />
       </div>
 
       {/* Plans */}
@@ -147,17 +196,17 @@ export default function BillingConsolePage() {
           const current = sub?.plan_key === p.key;
           return (
             <div key={p.key} className="col-span-12 sm:col-span-6 xl:col-span-4">
-              <div className={`${card} flex h-full flex-col ${p.popular ? "ring-1 ring-brand-400" : ""}`}>
-                <div className="flex items-center justify-between">
+              <div className={`${accentCard} h-full`}>
+                <div className="flex w-full items-center justify-between">
                   <h4 className="font-semibold text-gray-800 dark:text-white/90">{p.name}</h4>
                   {p.popular && <StatusBadge tone="primary">Popular</StatusBadge>}
                 </div>
-                <p className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
+                <p className={`mt-2 ${valueSizeClass(formatMoney(p.price_cents, p.currency))}`}>
                   {formatMoney(p.price_cents, p.currency)}
                   <span className="text-theme-sm font-normal text-gray-400"> / {p.interval}</span>
                 </p>
                 {p.price_cents > 0 && p.tax_cents ? (
-                  <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 break-words text-theme-xs text-gray-500 dark:text-gray-400">
                     + {formatMoney(p.tax_cents, p.currency)} VAT ={" "}
                     {formatMoney(p.amount_cents ?? p.price_cents + p.tax_cents, p.currency)} at checkout
                   </p>
@@ -198,6 +247,7 @@ export default function BillingConsolePage() {
                   one path that actually works for a real paid upgrade.
                 */}
                 {!current && p.price_cents > 0 && <CheckoutPanel plan={p} />}
+                <div className={`ic-stat-accent ic-stat-accent--${planAccent(p.key, p.popular)}`} />
               </div>
             </div>
           );

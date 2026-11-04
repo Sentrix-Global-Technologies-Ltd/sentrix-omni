@@ -1,4 +1,5 @@
 import { apiClient } from "../../../services/api/client";
+import { downloadFile, openFileInNewWindow } from "../../../services/api/download";
 import type { ApiResult } from "../../../services/api/types";
 import type {
   CheckoutSession,
@@ -26,6 +27,16 @@ export const billingApi = {
   },
   invoices(orgId: string): Promise<ApiResult<Invoice[]>> {
     return apiClient.get<Invoice[]>(`${base(orgId)}/billing/invoices`);
+  },
+  /** Opens the invoice PDF in a new window (the viewer has its own download button). */
+  openInvoicePdf(orgId: string, invoiceId: string): Promise<void> {
+    return openFileInNewWindow(`${base(orgId)}/billing/invoices/${invoiceId}/pdf`, { organizationId: orgId });
+  },
+  downloadInvoicePdf(orgId: string, invoice: Pick<Invoice, "id" | "number">): Promise<void> {
+    return downloadFile(`${base(orgId)}/billing/invoices/${invoice.id}/pdf`, {
+      organizationId: orgId,
+      filename: `${invoice.number}.pdf`,
+    });
   },
   subscribe(orgId: string, plan: string): Promise<ApiResult<Subscription>> {
     return apiClient.post<Subscription>(`${base(orgId)}/subscription`, { plan });
