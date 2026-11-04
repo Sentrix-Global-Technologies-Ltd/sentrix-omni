@@ -14,18 +14,106 @@ export interface Subscription {
   entitlements: unknown;
 }
 
-/** Platform (SuperAdmin-only) cross-tenant subscription oversight row. */
-export interface OrganizationSubscriptionOverview {
-  organization_id: string;
-  organization_name: string | null;
-  organization_slug: string | null;
+/* ------------------------------------------------------------------ */
+/* SuperAdmin billing console (platform/billing/*) — read-only.        */
+/* Customers only: Sentrix Monitoring and internal accounts are never  */
+/* returned. `status` is DERIVED server-side (a lapsed paid plan reads */
+/* "expired"); `stored_status` is what the database holds.             */
+/* ------------------------------------------------------------------ */
+
+export type PlatformBillingStatus = "active" | "trialing" | "cancelled" | "expired";
+export type PlatformBillingSegment = "organizations" | "individuals";
+
+export interface PlatformBillingPayment {
+  reference: string;
   plan_key: string;
   plan_name: string;
-  status: string;
+  amount_cents: number;
+  currency: string;
+  subtotal_cents: number | null;
+  tax_cents: number | null;
+  status: "pending" | "paid" | "failed";
+  /** Pending checkout nobody completed within 24h — display only. */
+  abandoned: boolean;
+  provider: string | null;
+  region: string | null;
+  paid_at: string | null;
+  created_at: string | null;
+}
+
+interface PlatformBillingCustomer {
+  plan_key: string;
+  plan_name: string;
+  status: PlatformBillingStatus;
+  stored_status: string;
+  /** False when no subscription row exists (reported as Free, nothing is created). */
+  has_subscription_record: boolean;
+  auto_renew: boolean | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
-  auto_renew: boolean;
-  updated_at: string | null;
+  last_payment_at: string | null;
+  created_at: string | null;
+}
+
+export interface PlatformBillingOrganization extends PlatformBillingCustomer {
+  organization_id: string;
+  name: string;
+  slug: string;
+  region: string | null;
+  lat: number | null;
+  lng: number | null;
+  owner: { name: string; email: string; phone: string | null } | null;
+  /** Detail view only. */
+  payments?: PlatformBillingPayment[];
+  invoices?: Invoice[];
+}
+
+export interface PlatformBillingIndividual extends PlatformBillingCustomer {
+  user_id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  /** Detail view only — for individuals the paid payment row is the receipt. */
+  receipts?: PlatformBillingPayment[];
+}
+
+export interface PlatformBillingSegmentSummary {
+  total: number;
+  paying: number;
+  by_status: Record<PlatformBillingStatus, number>;
+  by_plan: Record<string, number>;
+}
+
+export interface PlatformBillingPaymentCounts {
+  paid: number;
+  failed: number;
+  pending: number;
+  abandoned: number;
+}
+
+export interface PlatformBillingRevenueRow {
+  currency: string;
+  paid_total_cents: number;
+  paid_last_30_days_cents: number;
+  payments_count: number;
+}
+
+export interface PlatformBillingSummary {
+  generated_at: string;
+  organizations: PlatformBillingSegmentSummary;
+  individuals: PlatformBillingSegmentSummary;
+  payments: Record<PlatformBillingSegment, PlatformBillingPaymentCounts>;
+  revenue: Record<PlatformBillingSegment, PlatformBillingRevenueRow[]>;
+}
+
+export interface PlatformBillingFilters {
+  q?: string;
+  plan_key?: string;
+  status?: PlatformBillingStatus | "";
+  sort?: "recent" | "name" | "period_end";
+  page?: number;
+  per_page?: number;
 }
 
 export interface Plan {

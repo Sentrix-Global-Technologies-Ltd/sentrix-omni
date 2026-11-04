@@ -50,6 +50,13 @@ export interface NavItem {
    * a normal `access` rule can never hide anything from SuperAdmin.
    */
   requireOrgMembership?: boolean;
+  /**
+   * Hidden from SuperAdmins even though they may be members of an
+   * organization (every SuperAdmin is attached to Sentrix Monitoring). Used
+   * for org-scoped pages that would only show Sentrix's own internal org to a
+   * SuperAdmin (e.g. /billing); they have a platform equivalent instead.
+   */
+  hideForSuperAdmin?: boolean;
 }
 
 export interface NavGroup {
@@ -293,6 +300,18 @@ export const navigation: NavGroup[] = [
         // requireOrgMembership below.
         access: { anyPermission: ["billing.view"] },
         requireOrgMembership: true,
+        // A SuperAdmin's only org is Sentrix Monitoring (internal); platform
+        // billing lives at /superadmin/subscriptions instead.
+        hideForSuperAdmin: true,
+      },
+      {
+        key: "platform-billing",
+        label: "Billing & Subscriptions",
+        path: "/superadmin/subscriptions",
+        icon: <DollarLineIcon />,
+        // Cross-tenant billing console — SuperAdmin only, not delegable to any
+        // PlatformRole (mirrors the backend's isSuperAdmin() gate).
+        access: { superAdminOnly: true },
       },
       {
         key: "roles",

@@ -215,8 +215,8 @@ export default function SuperAdminOverviewPage() {
     ...(isSuperAdmin
       ? [
           {
-            title: "Subscriptions",
-            description: "Every organization's plan and billing status — free, trialing, active, cancelled.",
+            title: "Billing & Subscriptions",
+            description: "Customer organizations and individuals — plan, status, payments and invoices.",
             to: "/superadmin/subscriptions",
             icon: <PieChartIcon className="size-6" />,
             statLabel: "Report",

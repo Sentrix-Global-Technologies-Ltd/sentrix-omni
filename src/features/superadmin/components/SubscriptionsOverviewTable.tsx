@@ -1,34 +1,42 @@
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
-import { formatDateTime } from "../../../lib/format";
-import type { OrganizationSubscriptionOverview } from "../../billing/api/billing.types";
-
-function statusTone(s: string): "success" | "warning" | "error" | "light" {
-  if (s === "active") return "success";
-  if (s === "trialing") return "warning";
-  if (s === "cancelled" || s === "canceled") return "error";
-  return "light";
-}
+import { formatDateTime, humanize } from "../../../lib/format";
+import { billingStatusTone } from "./billingStatusTone";
+import type { PlatformBillingOrganization } from "../../billing/api/billing.types";
 
 interface Props {
-  rows: OrganizationSubscriptionOverview[];
+  rows: PlatformBillingOrganization[];
   isLoading?: boolean;
   error?: unknown;
   onRetry?: () => void;
+  onRowClick?: (row: PlatformBillingOrganization) => void;
 }
 
-/** Cross-tenant subscription oversight (Sentrix Console, SuperAdmin only). */
-export default function SubscriptionsOverviewTable({ rows, isLoading, error, onRetry }: Props) {
-  const columns: Column<OrganizationSubscriptionOverview>[] = [
+/** Customer organizations and their billing state (SuperAdmin billing console). */
+export default function SubscriptionsOverviewTable({ rows, isLoading, error, onRetry, onRowClick }: Props) {
+  const columns: Column<PlatformBillingOrganization>[] = [
     {
       key: "organization",
       header: "Organization",
       render: (r) => (
         <div>
-          <p className="font-medium text-gray-800 dark:text-white/90">{r.organization_name ?? "—"}</p>
-          {r.organization_slug && <p className="text-theme-xs text-gray-400">{r.organization_slug}</p>}
+          <p className="font-medium text-gray-800 dark:text-white/90">{r.name}</p>
+          <p className="text-theme-xs text-gray-400">{r.slug}</p>
         </div>
       ),
+    },
+    {
+      key: "owner",
+      header: "Owner",
+      render: (r) =>
+        r.owner ? (
+          <div>
+            <p className="text-gray-700 dark:text-gray-300">{r.owner.name}</p>
+            <p className="text-theme-xs text-gray-400">{r.owner.email}</p>
+          </div>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
     },
     {
       key: "plan",
@@ -38,35 +46,23 @@ export default function SubscriptionsOverviewTable({ rows, isLoading, error, onR
     {
       key: "status",
       header: "Status",
-      render: (r) => <StatusBadge tone={statusTone(r.status)}>{r.status}</StatusBadge>,
-    },
-    {
-      key: "trial_ends_at",
-      header: "Trial ends",
-      render: (r) => (
-        <span className="text-gray-500 dark:text-gray-400">
-          {r.status === "trialing" && r.trial_ends_at ? formatDateTime(r.trial_ends_at) : "—"}
-        </span>
-      ),
+      render: (r) => <StatusBadge tone={billingStatusTone(r.status)}>{humanize(r.status)}</StatusBadge>,
     },
     {
       key: "current_period_end",
-      header: "Renews",
+      header: "Period ends",
       render: (r) => (
         <span className="text-gray-500 dark:text-gray-400">
-          {r.current_period_end ? formatDateTime(r.current_period_end) : "—"}
+          {r.status === "trialing" && r.trial_ends_at
+            ? `Trial ${formatDateTime(r.trial_ends_at)}`
+            : formatDateTime(r.current_period_end)}
         </span>
       ),
     },
     {
-      key: "auto_renew",
-      header: "Auto-renew",
-      render: (r) => <span className="text-gray-500 dark:text-gray-400">{r.auto_renew ? "On" : "Off"}</span>,
-    },
-    {
-      key: "updated_at",
-      header: "Updated",
-      render: (r) => <span className="text-gray-500 dark:text-gray-400">{formatDateTime(r.updated_at)}</span>,
+      key: "last_payment_at",
+      header: "Last payment",
+      render: (r) => <span className="text-gray-500 dark:text-gray-400">{formatDateTime(r.last_payment_at)}</span>,
     },
   ];
 
@@ -78,8 +74,9 @@ export default function SubscriptionsOverviewTable({ rows, isLoading, error, onR
       isLoading={isLoading}
       error={error}
       onRetry={onRetry}
-      emptyTitle="No subscriptions"
-      emptyDescription="No organization has a subscription record yet."
+      onRowClick={onRowClick}
+      emptyTitle="No organizations found"
+      emptyDescription="No customer organization matches these filters."
     />
   );
 }

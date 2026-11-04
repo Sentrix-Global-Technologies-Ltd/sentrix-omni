@@ -3,9 +3,12 @@ import type { ApiResult } from "../../../services/api/types";
 import type {
   CheckoutSession,
   Invoice,
-  OrganizationSubscriptionOverview,
   Payment,
   Plan,
+  PlatformBillingFilters,
+  PlatformBillingIndividual,
+  PlatformBillingOrganization,
+  PlatformBillingSummary,
   Subscription,
 } from "./billing.types";
 
@@ -44,10 +47,34 @@ export const billingApi = {
   },
 };
 
-/** Sentrix Console (SuperAdmin only) — cross-tenant subscription oversight:
- *  which organizations are free/trialing/active/cancelled. */
+/** Drop empty filter values so they never reach the query string. */
+function cleanFilters(filters: PlatformBillingFilters): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== null && value !== "") out[key] = value;
+  }
+  return out;
+}
+
+const platform = "platform/billing";
+
+/** Sentrix Console (SuperAdmin only) — read-only billing console: customer
+ *  organizations and individuals, derived status, payment history and
+ *  invoices/receipts. Internal Sentrix accounts are excluded server-side. */
 export const platformBillingApi = {
-  subscriptions(query?: { status?: string; plan_key?: string; page?: number }): Promise<ApiResult<OrganizationSubscriptionOverview[]>> {
-    return apiClient.get<OrganizationSubscriptionOverview[]>("platform/subscriptions", { query });
+  summary(): Promise<ApiResult<PlatformBillingSummary>> {
+    return apiClient.get<PlatformBillingSummary>(`${platform}/summary`);
+  },
+  organizations(filters: PlatformBillingFilters): Promise<ApiResult<PlatformBillingOrganization[]>> {
+    return apiClient.get<PlatformBillingOrganization[]>(`${platform}/organizations`, { query: cleanFilters(filters) });
+  },
+  organization(id: string): Promise<ApiResult<PlatformBillingOrganization>> {
+    return apiClient.get<PlatformBillingOrganization>(`${platform}/organizations/${id}`);
+  },
+  individuals(filters: PlatformBillingFilters): Promise<ApiResult<PlatformBillingIndividual[]>> {
+    return apiClient.get<PlatformBillingIndividual[]>(`${platform}/individuals`, { query: cleanFilters(filters) });
+  },
+  individual(id: string): Promise<ApiResult<PlatformBillingIndividual>> {
+    return apiClient.get<PlatformBillingIndividual>(`${platform}/individuals/${id}`);
   },
 };

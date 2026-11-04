@@ -15,7 +15,7 @@ import { navigation, type NavGroup } from "../config/navigation";
  */
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const { isAllowed, isOrgMember } = useAuthz();
+  const { isAllowed, isOrgMember, isSuperAdmin } = useAuthz();
   const location = useLocation();
 
   const expanded = isExpanded || isHovered || isMobileOpen;
@@ -35,7 +35,10 @@ const AppSidebar: React.FC = () => {
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => isAllowed(item.access) && (!item.requireOrgMembership || isOrgMember),
+        (item) =>
+          isAllowed(item.access) &&
+          (!item.requireOrgMembership || isOrgMember) &&
+          !(item.hideForSuperAdmin && isSuperAdmin),
       ),
     }))
     .filter((group) => group.items.length > 0);

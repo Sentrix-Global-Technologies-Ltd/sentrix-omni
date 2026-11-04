@@ -185,7 +185,7 @@ export default function App() {
                 <Route element={<RequirePermission rule={accessByPath["/retention"]} />}>
                   <Route path="/retention" element={<RetentionConsolePage />} />
                 </Route>
-                <Route element={<RequirePermission rule={accessByPath["/billing"]} requireOrgMembership />}>
+                <Route element={<RequirePermission rule={accessByPath["/billing"]} requireOrgMembership redirectSuperAdminTo="/superadmin/subscriptions" />}>
                   <Route path="/billing" element={<BillingConsolePage />} />
                 </Route>
                 <Route path="/assistant" element={<AssistantPage />} />

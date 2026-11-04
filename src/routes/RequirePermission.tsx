@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { useAuthz } from "../hooks/useAuthz";
 import type { AccessRule } from "../authz/access";
 import Forbidden from "../pages/OtherPage/Forbidden";
@@ -18,11 +18,18 @@ import Forbidden from "../pages/OtherPage/Forbidden";
 export default function RequirePermission({
   rule,
   requireOrgMembership,
+  redirectSuperAdminTo,
 }: {
   rule?: AccessRule;
   requireOrgMembership?: boolean;
+  /**
+   * SuperAdmins are sent here instead of the route (mirrors NavItem.hideForSuperAdmin):
+   * the page is org-scoped and a SuperAdmin's only org is Sentrix's internal one.
+   */
+  redirectSuperAdminTo?: string;
 }) {
-  const { isAllowed, isOrgMember } = useAuthz();
+  const { isAllowed, isOrgMember, isSuperAdmin } = useAuthz();
+  if (redirectSuperAdminTo && isSuperAdmin) return <Navigate to={redirectSuperAdminTo} replace />;
   const allowed = isAllowed(rule) && (!requireOrgMembership || isOrgMember);
   return allowed ? <Outlet /> : <Forbidden />;
 }

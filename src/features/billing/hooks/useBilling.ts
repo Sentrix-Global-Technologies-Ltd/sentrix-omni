@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { billingApi, platformBillingApi } from "../api/billing.api";
 import { billingKeys } from "../api/billing.keys";
+import type { PlatformBillingFilters } from "../api/billing.types";
 
 /** Invalidate every billing query under the active org after a write. */
 function useOrgInvalidate() {
@@ -86,10 +87,46 @@ export function useCheckoutActions() {
   };
 }
 
-/** Sentrix Console (SuperAdmin only) — every organization's subscription status. */
-export function usePlatformSubscriptions(query?: { status?: string; plan_key?: string; page?: number }) {
+/* ---- Sentrix Console (SuperAdmin only): read-only billing console ---- */
+
+export function usePlatformBillingSummary() {
   return useQuery({
-    queryKey: [...billingKeys.platformSubscriptions(), query],
-    queryFn: () => platformBillingApi.subscriptions(query),
+    queryKey: billingKeys.platformSummary(),
+    queryFn: () => platformBillingApi.summary(),
+  });
+}
+
+export function usePlatformBillingOrganizations(filters: PlatformBillingFilters, enabled = true) {
+  return useQuery({
+    queryKey: billingKeys.platformOrganizations(filters),
+    queryFn: () => platformBillingApi.organizations(filters),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+export function usePlatformBillingIndividuals(filters: PlatformBillingFilters, enabled = true) {
+  return useQuery({
+    queryKey: billingKeys.platformIndividuals(filters),
+    queryFn: () => platformBillingApi.individuals(filters),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+/** Customer detail (payment history + invoices/receipts). Pass null to stay idle. */
+export function usePlatformBillingOrganization(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.platformOrganization(id ?? ""),
+    queryFn: () => platformBillingApi.organization(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+export function usePlatformBillingIndividual(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.platformIndividual(id ?? ""),
+    queryFn: () => platformBillingApi.individual(id as string),
+    enabled: Boolean(id),
   });
 }

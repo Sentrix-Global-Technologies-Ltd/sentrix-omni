@@ -25,6 +25,17 @@ export function formatNaira(cents: number | null | undefined): string {
   }).format(cents / 100);
 }
 
+/** Money from an integer minor-unit value in any ISO currency (never summed across currencies). */
+export function formatMoney(cents: number | null | undefined, currency: string): string {
+  if (cents == null) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
+  } catch {
+    // Unknown currency code: show the plain number with the code rather than crash.
+    return `${currency} ${(cents / 100).toFixed(2)}`;
+  }
+}
+
 /** Compact "time ago" for things like a responder's last-seen timestamp. */
 export function relativeTime(iso: string | null | undefined): string {
   if (!iso) return "—";
