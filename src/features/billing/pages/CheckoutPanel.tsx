@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../../../components/ui/button/Button";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
+import { formatMoney } from "../../../lib/format";
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
 import { useCheckoutActions, useCheckoutStatus } from "../hooks/useBilling";
@@ -88,9 +89,9 @@ export default function CheckoutPanel({ plan }: { plan: Plan }) {
 
   return (
     <ConfirmActionButton
-      label={`Checkout via PSP`}
+      label="Upgrade & pay"
       title={`Start checkout for ${plan.name}?`}
-      description={`This creates a pending payment and checkout session for the ${plan.name} plan (${plan.currency} ${plan.price}/${plan.interval}).`}
+      description={`You will be taken to our payment provider to pay ${formatMoney(plan.amount_cents ?? plan.price_cents, plan.currency)} (VAT included) for the ${plan.name} plan, billed per ${plan.interval}.`}
       confirmLabel="Start checkout"
       onConfirm={handleCheckout}
     />

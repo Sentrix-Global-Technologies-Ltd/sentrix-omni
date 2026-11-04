@@ -121,6 +121,10 @@ export interface Plan {
   name: string;
   price_cents: number;
   price: string;
+  /** VAT/tax on top of the price, in minor units (checkout adds this). */
+  tax_cents?: number;
+  /** What the payer is actually charged (price + tax), in minor units. */
+  amount_cents?: number;
   currency: string;
   interval: string;
   popular: boolean;

@@ -4,7 +4,7 @@ import Button from "../../../components/ui/button/Button";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import ConfirmActionButton from "../../../components/shared/ConfirmActionButton";
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
-import { formatDateTime } from "../../../lib/format";
+import { formatDateTime, formatMoney } from "../../../lib/format";
 import { useOrganization } from "../../../context/OrganizationContext";
 import { useBillingActions, useInvoices, usePlans, useSubscription } from "../hooks/useBilling";
 import CheckoutPanel from "./CheckoutPanel";
@@ -153,9 +153,15 @@ export default function BillingConsolePage() {
                   {p.popular && <StatusBadge tone="primary">Popular</StatusBadge>}
                 </div>
                 <p className="mt-2 text-title-sm font-bold text-gray-800 dark:text-white/90">
-                  {p.currency} {p.price}
+                  {formatMoney(p.price_cents, p.currency)}
                   <span className="text-theme-sm font-normal text-gray-400"> / {p.interval}</span>
                 </p>
+                {p.price_cents > 0 && p.tax_cents ? (
+                  <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    + {formatMoney(p.tax_cents, p.currency)} VAT ={" "}
+                    {formatMoney(p.amount_cents ?? p.price_cents + p.tax_cents, p.currency)} at checkout
+                  </p>
+                ) : null}
                 {p.entitlements.length > 0 && (
                   <ul className="mt-3 flex-1 space-y-1 text-theme-sm text-gray-500 dark:text-gray-400">
                     {p.entitlements.map((e) => (
