@@ -10,6 +10,13 @@ interface State {
   info: ErrorInfo | null;
 }
 
+const RELOAD_FLAG = "sentrix:chunk-reload";
+
+function isStaleChunkError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /dynamically imported module|importing a module script failed|loading chunk|loading css chunk/i.test(message);
+}
+
 /**
  * Catches render-time errors in a subtree and shows the shared ErrorState
  * instead of a blank screen. Wrap the routed content; key it by route so
@@ -28,6 +35,20 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Hook for telemetry; logged so it's never silently swallowed.
     console.error("Unhandled UI error:", error, info?.componentStack);
+
+    // After a deploy, a tab still running the old build asks for chunk files
+    // that no longer exist. A reload fetches the new build; do it once only.
+    if (isStaleChunkError(error)) {
+      try {
+        if (!sessionStorage.getItem(RELOAD_FLAG)) {
+          sessionStorage.setItem(RELOAD_FLAG, "1");
+          window.location.reload();
+          return;
+        }
+      } catch {
+        /* storage unavailable: fall through to the normal error UI */
+      }
+    }
     this.setState({ info });
   }
 
@@ -46,6 +67,11 @@ export default class ErrorBoundary extends Component<Props, State> {
             error={error}
             onRetry={() => window.location.reload()}
           />
+          {!import.meta.env.DEV && error instanceof Error && (
+            <p className="mt-3 text-center text-theme-xs text-gray-400">
+              Details: {error.name}: {error.message}
+            </p>
+          )}
           {import.meta.env.DEV && (
             <details
               open

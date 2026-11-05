@@ -95,7 +95,7 @@ export default function BillingCustomerDetailModal({ target, onClose }: Props) {
   const payments = isOrg ? orgData?.payments : personData?.receipts;
 
   return (
-    <Modal isOpen onClose={onClose} className="mx-4 w-full max-w-3xl p-6">
+    <Modal isOpen onClose={onClose} className="mx-4 my-6 w-full max-w-3xl p-6">
       <div className="pr-8">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
           {isOrg ? "Organization billing" : "Individual billing"}
