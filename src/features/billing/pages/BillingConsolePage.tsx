@@ -46,7 +46,7 @@ export default function BillingConsolePage() {
   const plansQuery = usePlans();
   const optionsQuery = usePlanOptions();
   const invoicesQuery = useInvoices();
-  const { subscribe, cancel, autoRenew } = useBillingActions();
+  const { subscribe, cancel } = useBillingActions();
   const pdf = useInvoicePdfActions();
   const toast = useToast();
 
@@ -142,7 +142,9 @@ export default function BillingConsolePage() {
               {sub?.plan_name ?? (subQuery.isLoading ? "…" : "—")}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-theme-sm text-gray-500 dark:text-gray-400">
-              {sub && status && <StatusBadge tone={statusTone(status)}>{status}</StatusBadge>}
+              {sub && status && (
+                <StatusBadge tone={statusTone(status)}>{status.replace("_", " ")}</StatusBadge>
+              )}
               {sub?.status === "trialing" && sub.trial_ends_at && (
                 <span>Trial ends {formatDateTime(sub.trial_ends_at)}</span>
               )}
@@ -150,6 +152,8 @@ export default function BillingConsolePage() {
                 <span>
                   {status === "expired"
                     ? "Expired"
+                    : status === "past_due"
+                      ? "Ended"
                     : status === "cancelled"
                       ? "Ends"
                       : "Active until"}{" "}
@@ -158,6 +162,12 @@ export default function BillingConsolePage() {
               )}
               {sub?.payment_method && <span>· {sub.payment_method}</span>}
             </div>
+            {status === "past_due" && sub?.grace_ends_at && (
+              <p className="mt-2 text-theme-sm text-warning-600 dark:text-warning-400">
+                Your plan has ended. You keep full access until {formatDateTime(sub.grace_ends_at)}; renew before
+                then to avoid moving to the Free plan.
+              </p>
+            )}
             {entitlements.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-1">
                 {entitlements.map((e) => (
@@ -170,14 +180,11 @@ export default function BillingConsolePage() {
           </div>
           {sub && (
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={autoRenew.isPending}
-                onClick={() => autoRenew.mutate(!sub.auto_renew)}
-              >
-                Auto-renew: {sub.auto_renew ? "On" : "Off"}
-              </Button>
+              {/*
+                The auto-renew toggle is intentionally not shown: renewal is
+                manual until card authorisations are stored (lifecycle Phase 6),
+                so a toggle would promise something the system does not do.
+              */}
               {/*
                 Cancel only makes sense with a paid plan to walk away from —
                 cancelling while already on Free has nothing to end (there's

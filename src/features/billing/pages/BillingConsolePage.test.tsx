@@ -169,4 +169,14 @@ describe("BillingConsolePage", () => {
     expect(screen.getByText(/^Expired/)).toBeInTheDocument();
     expect(screen.queryByText(/Renews/)).toBeNull();
   });
+
+  it("BCP-8 a past-due plan shows the grace deadline and full access", () => {
+    hooks.useSubscription.mockReturnValue({
+      data: { data: { plan_key: "pro_monthly", plan_name: "Pro Monthly", status: "active", derived_status: "past_due", grace_ends_at: "2026-11-08T10:00:00Z", auto_renew: true, entitlements: [], current_period_end: "2026-11-01T10:00:00Z" } },
+      isLoading: false,
+    });
+    setup();
+    expect(screen.getByText("past due")).toBeInTheDocument();
+    expect(screen.getByText(/keep full access until/)).toBeInTheDocument();
+  });
 });

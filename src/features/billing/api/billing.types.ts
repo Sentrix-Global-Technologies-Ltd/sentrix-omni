@@ -7,8 +7,10 @@ export interface Subscription {
   plan_key: string;
   plan_name: string;
   status: string;
-  /** Stored status, except a paid plan past its period end reads "expired". */
+  /** Stored status, except a paid plan past its period end reads "past_due" during the grace window, then "expired". */
   derived_status?: string;
+  /** Set while "past_due": when full access ends and the org moves to Free. */
+  grace_ends_at?: string | null;
   auto_renew: boolean;
   payment_method: string | null;
   trial_ends_at: string | null;
