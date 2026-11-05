@@ -93,8 +93,29 @@ export async function openFileInNewWindow(path: string, options: DownloadOptions
       saveBlob(blob, name);
       return;
     }
-    const objectUrl = URL.createObjectURL(blob);
-    win.location.href = objectUrl;
+
+    // Make sure the browser knows it is a PDF so it uses its viewer.
+    const typed =
+      !blob.type && /\.pdf$/i.test(name) ? new Blob([blob], { type: "application/pdf" }) : blob;
+    const objectUrl = URL.createObjectURL(typed);
+
+    try {
+      // Embed the file in the blank window's own document. Pointing a freshly
+      // opened window straight at a blob: URL leaves some browsers on a blank
+      // page; an embedded frame renders reliably (and the viewer inside still
+      // has its own download/print buttons).
+      win.document.title = name;
+      win.document.body.style.margin = "0";
+      win.document.body.style.height = "100vh";
+      const frame = win.document.createElement("iframe");
+      frame.src = objectUrl;
+      frame.title = name;
+      frame.style.cssText = "border:0;width:100%;height:100%;";
+      win.document.body.appendChild(frame);
+    } catch {
+      win.location.href = objectUrl;
+    }
+
     // Keep the URL alive long enough for the viewer to load it.
     setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
   } catch (err) {
