@@ -33,6 +33,7 @@ const hooks = vi.hoisted(() => ({
   useInvoicePdfActions: vi.fn(),
   useCheckoutStatus: vi.fn(),
   usePlanOptions: vi.fn(),
+  useEntitlements: vi.fn(),
 }));
 vi.mock("../hooks/useBilling", () => hooks);
 
@@ -41,6 +42,7 @@ const download = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  hooks.useEntitlements.mockReturnValue({ data: undefined });
   hooks.usePlanOptions.mockReturnValue({
     data: {
       data: [
@@ -178,5 +180,14 @@ describe("BillingConsolePage", () => {
     setup();
     expect(screen.getByText("past due")).toBeInTheDocument();
     expect(screen.getByText(/keep full access until/)).toBeInTheDocument();
+  });
+
+  it("BCP-9 shows hardware usage against the plan allowance", () => {
+    hooks.useEntitlements.mockReturnValue({
+      data: { data: { plan_key: "free", mode: "warn", entitlements: [], usage: { hardware: { used: 7, limit: 5, over_limit: true } } } },
+    });
+    setup();
+    expect(screen.getByTestId("hardware-usage")).toHaveTextContent("7 of 5 used");
+    expect(screen.getByTestId("hardware-usage")).toHaveTextContent("over");
   });
 });

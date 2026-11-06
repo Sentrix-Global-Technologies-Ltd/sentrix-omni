@@ -29,6 +29,16 @@ export function usePlans() {
   });
 }
 
+/** Plan limits and current usage (e.g. devices used of the cap). */
+export function useEntitlements() {
+  const { activeId } = useOrganization();
+  return useQuery({
+    queryKey: billingKeys.entitlements(activeId ?? ""),
+    queryFn: () => billingApi.entitlements(activeId as string),
+    enabled: Boolean(activeId),
+  });
+}
+
 /** Server-computed meaning of each plan for the active organization. */
 export function usePlanOptions() {
   const { activeId } = useOrganization();

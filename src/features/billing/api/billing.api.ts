@@ -6,6 +6,7 @@ import type {
   Invoice,
   Payment,
   Plan,
+  PlanEntitlements,
   PlanOption,
   PlatformBillingFilters,
   PlatformBillingIndividual,
@@ -25,6 +26,9 @@ export const billingApi = {
   },
   plans(): Promise<ApiResult<Plan[]>> {
     return apiClient.get<Plan[]>("plans");
+  },
+  entitlements(orgId: string): Promise<ApiResult<PlanEntitlements>> {
+    return apiClient.get<PlanEntitlements>(`${base(orgId)}/billing/entitlements`);
   },
   planOptions(orgId: string): Promise<ApiResult<PlanOption[]>> {
     return apiClient.get<PlanOption[]>(`${base(orgId)}/billing/plan-options`);

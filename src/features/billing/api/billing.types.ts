@@ -28,6 +28,17 @@ export type PlanChangeAction =
   | "cancel_at_period_end"
   | "scheduled_downgrade";
 
+/** What the active organization's plan includes and how much of it is used. */
+export interface PlanEntitlements {
+  plan_key: string;
+  /** Plan gating rollout: "warn" never blocks, "enforce" blocks (HTTP 402). */
+  mode: "off" | "warn" | "enforce";
+  entitlements: string[];
+  usage: {
+    hardware: { used: number; limit: number | null; over_limit: boolean };
+  };
+}
+
 export interface PlanOption {
   key: string;
   name: string;

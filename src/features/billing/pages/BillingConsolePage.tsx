@@ -6,7 +6,7 @@ import ConfirmActionButton from "../../../components/shared/ConfirmActionButton"
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import { formatDateTime, formatMoney } from "../../../lib/format";
 import { useOrganization } from "../../../context/OrganizationContext";
-import { useBillingActions, useInvoicePdfActions, useInvoices, usePlanOptions, usePlans, useSubscription } from "../hooks/useBilling";
+import { useBillingActions, useEntitlements, useInvoicePdfActions, useInvoices, usePlanOptions, usePlans, useSubscription } from "../hooks/useBilling";
 import { useToast } from "../../../components/shared/toast";
 import { ApiError } from "../../../services/api/errors";
 import { valueSizeClass } from "../../../components/shared/fitText";
@@ -59,6 +59,7 @@ export default function BillingConsolePage() {
   // The stored status never turns "expired" by itself; the server derives it.
   const status = sub?.derived_status ?? sub?.status;
   const invoices = invoicesQuery.data?.data ?? [];
+  const hardware = useEntitlements().data?.data?.usage?.hardware;
   const entitlements = Array.isArray(sub?.entitlements) ? (sub?.entitlements as string[]) : [];
 
   if (!activeId) {
@@ -176,6 +177,12 @@ export default function BillingConsolePage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {hardware && hardware.limit !== null && (
+              <p className="mt-3 text-theme-sm text-gray-600 dark:text-gray-400" data-testid="hardware-usage">
+                Hardware devices: {hardware.used} of {hardware.limit} used
+                {hardware.over_limit ? ". You are over this plan's device allowance; Pro Annual includes unlimited devices." : "."}
+              </p>
             )}
           </div>
           {sub && (

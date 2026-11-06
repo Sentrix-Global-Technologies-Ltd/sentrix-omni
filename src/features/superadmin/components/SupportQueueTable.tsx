@@ -52,7 +52,12 @@ export default function SupportQueueTable({ tickets, isLoading, error, onRetry, 
     {
       key: "title",
       header: "Title",
-      render: (t) => <p className="font-medium text-gray-800 dark:text-white/90">{t.title}</p>,
+      render: (t) => (
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-gray-800 dark:text-white/90">{t.title}</p>
+          {t.is_priority && <StatusBadge tone="warning">Priority</StatusBadge>}
+        </div>
+      ),
     },
     {
       key: "category",

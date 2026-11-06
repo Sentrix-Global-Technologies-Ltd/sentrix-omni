@@ -22,6 +22,8 @@ export interface SupportTicket {
   organization?: { id: string; name: string } | null;
   source: SupportTicketSource;
   source_label: string;
+  /** Pro plans include priority support; flagged at submission. */
+  is_priority?: boolean;
   submitted_by: string;
   submitter?: { id: string; name: string; email: string };
   title: string;
