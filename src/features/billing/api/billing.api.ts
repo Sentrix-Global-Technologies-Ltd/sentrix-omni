@@ -2,6 +2,8 @@ import { apiClient } from "../../../services/api/client";
 import { downloadFile, openFileInNewWindow } from "../../../services/api/download";
 import type { ApiResult } from "../../../services/api/types";
 import type {
+  BillingOverrideEntry,
+  BillingOverridePayload,
   CheckoutSession,
   Invoice,
   Payment,
@@ -89,6 +91,14 @@ export const platformBillingApi = {
   },
   organization(id: string): Promise<ApiResult<PlatformBillingOrganization>> {
     return apiClient.get<PlatformBillingOrganization>(`${platform}/organizations/${id}`);
+  },
+  /** SuperAdmin override (billing.override): extend / comp / downgrade. Reason is mandatory and audited. */
+  override(orgId: string, payload: BillingOverridePayload): Promise<ApiResult<PlatformBillingOrganization>> {
+    const { kind, ...body } = payload;
+    return apiClient.post<PlatformBillingOrganization>(`${platform}/organizations/${orgId}/overrides/${kind}`, body);
+  },
+  overrideHistory(orgId: string): Promise<ApiResult<BillingOverrideEntry[]>> {
+    return apiClient.get<BillingOverrideEntry[]>(`${platform}/organizations/${orgId}/overrides`);
   },
   individuals(filters: PlatformBillingFilters): Promise<ApiResult<PlatformBillingIndividual[]>> {
     return apiClient.get<PlatformBillingIndividual[]>(`${platform}/individuals`, { query: cleanFilters(filters) });

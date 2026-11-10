@@ -2,6 +2,8 @@ import { Modal } from "../../../components/ui/modal";
 import StatusBadge from "../../../components/ui/badge/StatusBadge";
 import DataTable, { type Column } from "../../../components/ui/table/DataTable";
 import ErrorState from "../../../components/ui/state/ErrorState";
+import Can from "../../../components/shared/Can";
+import BillingOverridePanel from "./BillingOverridePanel";
 import { formatDateTime, formatMoney, humanize } from "../../../lib/format";
 import { billingStatusTone, paymentBadge } from "./billingStatusTone";
 import {
@@ -79,7 +81,7 @@ const invoiceColumns: Column<Invoice>[] = [
  * Billing detail for one customer (SuperAdmin billing console): subscription
  * state, contact, and payment history. Organizations also show invoices; for
  * individuals the paid payment row IS the receipt (there is no consumer
- * invoice table). Read-only.
+ * invoice table). Read-only, except for the billing.override panel (SuperAdmin).
  */
 export default function BillingCustomerDetailModal({ target, onClose }: Props) {
   const org = usePlatformBillingOrganization(target?.segment === "organizations" ? target.id : null);
@@ -166,6 +168,16 @@ export default function BillingCustomerDetailModal({ target, onClose }: Props) {
               emptyDescription="No payment has been attempted yet."
             />
           </div>
+
+          {isOrg && orgData && (
+            <Can permission="billing.override">
+              <BillingOverridePanel
+                organizationId={orgData.organization_id}
+                planKey={orgData.plan_key}
+                status={orgData.status}
+              />
+            </Can>
+          )}
 
           {isOrg && (
             <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">

@@ -113,6 +113,24 @@ export interface PlatformBillingOrganization extends PlatformBillingCustomer {
   invoices?: Invoice[];
 }
 
+/** One SuperAdmin override recorded in the audit trail (newest first). */
+export interface BillingOverrideEntry {
+  id: string;
+  action: string;
+  actor: { id: string; name: string; email: string } | null;
+  reason: string | null;
+  days: number | null;
+  plan_key: string | null;
+  before: { plan_key: string; status: string; current_period_end: string | null } | null;
+  after: { plan_key: string; status: string; current_period_end: string | null } | null;
+  created_at: string;
+}
+
+export type BillingOverridePayload =
+  | { kind: "extend"; days: number; reason: string }
+  | { kind: "comp"; plan_key: string; days: number; reason: string }
+  | { kind: "downgrade"; reason: string };
+
 export interface PlatformBillingIndividual extends PlatformBillingCustomer {
   user_id: string;
   name: string;

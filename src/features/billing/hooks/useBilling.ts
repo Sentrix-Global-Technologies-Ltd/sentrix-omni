@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { useOrganization } from "../../../context/OrganizationContext";
 import { billingApi, platformBillingApi } from "../api/billing.api";
 import { billingKeys } from "../api/billing.keys";
-import type { PlatformBillingFilters } from "../api/billing.types";
+import type { BillingOverridePayload, PlatformBillingFilters } from "../api/billing.types";
 
 /** Invalidate every billing query under the active org after a write. */
 function useOrgInvalidate() {
@@ -177,5 +177,26 @@ export function usePlatformBillingIndividual(id: string | null) {
     queryKey: billingKeys.platformIndividual(id ?? ""),
     queryFn: () => platformBillingApi.individual(id as string),
     enabled: Boolean(id),
+  });
+}
+
+/** SuperAdmin override history for one organization (billing.override). */
+export function usePlatformBillingOverrideHistory(orgId: string | null) {
+  return useQuery({
+    queryKey: billingKeys.platformOverrides(orgId ?? ""),
+    queryFn: () => platformBillingApi.overrideHistory(orgId as string),
+    enabled: orgId !== null,
+  });
+}
+
+/** Extend / comp / downgrade an organization's subscription (billing.override). */
+export function usePlatformBillingOverride(orgId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BillingOverridePayload) => platformBillingApi.override(orgId, payload),
+    onSuccess: () => {
+      // Refreshes the customer detail, the lists, the summary cards and the history.
+      queryClient.invalidateQueries({ queryKey: billingKeys.platform() });
+    },
   });
 }

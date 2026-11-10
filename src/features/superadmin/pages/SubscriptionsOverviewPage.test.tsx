@@ -22,6 +22,8 @@ import type {
 } from "../../billing/api/billing.types";
 
 vi.mock("../../../components/common/PageMeta", () => ({ default: () => null }));
+// The override panel has its own tests (BillingOverridePanel.test.tsx).
+vi.mock("../components/BillingOverridePanel", () => ({ default: () => <div data-testid="override-panel-stub" /> }));
 vi.mock("../../../components/shared/Can", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

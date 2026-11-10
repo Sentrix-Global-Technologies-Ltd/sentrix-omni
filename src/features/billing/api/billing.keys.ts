@@ -12,6 +12,7 @@ export const billingKeys = {
   platformSummary: () => ["billing", "platform", "summary"] as const,
   platformOrganizations: (filters: object) => ["billing", "platform", "organizations", filters] as const,
   platformOrganization: (id: string) => ["billing", "platform", "organization", id] as const,
+  platformOverrides: (orgId: string) => ["billing", "platform", "overrides", orgId] as const,
   platformIndividuals: (filters: object) => ["billing", "platform", "individuals", filters] as const,
   platformIndividual: (id: string) => ["billing", "platform", "individual", id] as const,
 };
